@@ -6,8 +6,9 @@ import { useSelector } from "react-redux";
 import { StatusBar } from "expo-status-bar";
 
 const SplashScreen = ({ navigation, route }) => {
-  const { onboardingData } = useSelector((state) => state.onboarding);
-  console.log("user data at splashscreen =>>>> ", onboardingData);
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
+  const { onboarding } = useSelector((state) => state.acgUser);
+  console.log("user data at splashscreen =>>>> ", accountsGoalUser);
   useEffect(() => {
     const navigateToScreen = async () => {
       try {
@@ -36,7 +37,13 @@ const SplashScreen = ({ navigation, route }) => {
               //     ? "scout_onboarding_first"
               //     : "authStackScreen"
               // }`,
-              name: `${onboardingData?.onboarding ? "signup" : "onboard1"}`,
+              name: `${
+                onboarding && accountsGoalUser?.login
+                  ? "Home"
+                  : onboarding && !accountsGoalUser?.login
+                  ? "login"
+                  : "onboard1"
+              }`,
             },
           ],
         });
@@ -58,7 +65,7 @@ const SplashScreen = ({ navigation, route }) => {
   }, [navigation]);
   return (
     <>
-      <StatusBar style="light" backgroundColor={"#4169E1"} />
+      <StatusBar style="light" backgroundColor={"#4169E1"} translucent={true} />
       <SafeAreaView className="flex-1 flex flex-col justify-center items-center bg-primary-color">
         <SplashIcon />
       </SafeAreaView>

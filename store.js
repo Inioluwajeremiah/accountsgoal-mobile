@@ -10,21 +10,20 @@ import {
   REGISTER,
 } from "redux-persist";
 import storage from "@react-native-async-storage/async-storage";
-import onbardingSliceReducer from "./src/slices/onbardingSlice";
+import userSliceReducer from "./src/slices/userSlice";
+import { apiSlice } from "./src/slices/createApiSlice";
 
 const persistConfig = {
-  key: "user_data",
+  key: "acgUser",
   storage,
 };
 
-const persistedOnboardingReducer = persistReducer(
-  persistConfig,
-  onbardingSliceReducer
-);
+const persistedAcgUserReducer = persistReducer(persistConfig, userSliceReducer);
 
 const store = configureStore({
   reducer: {
-    onboarding: persistedOnboardingReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    acgUser: persistedAcgUserReducer,
   },
   devTools: true,
   middleware: (getDefaultMiddleware) =>
@@ -32,8 +31,7 @@ const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
-  // .concat(apiSlice.middleware),
+    }).concat(apiSlice.middleware),
 });
 
 export const persistor = persistStore(store);

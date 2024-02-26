@@ -1,3 +1,4 @@
+import "react-native-gesture-handler";
 import { View, Text } from "react-native";
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
@@ -13,14 +14,17 @@ import VerifyUserScreen from "./authScreens/VerifyUserScreen";
 import EmailVerificationSuccessAlertScreen from "./AlertScreen/EmailVerificationSuccessAlertScreen";
 import LoginScreen from "./authScreens/LoginScreen";
 import HomeScreen from "./dashboardScreens/HomeScreen";
+import ForgotPasswordScreen from "./authScreens/ForgotPasswordScreen";
+import VerifyPasswordResetScreen from "./authScreens/VerifyPasswordResetScreen";
+import PasswordResetScreen from "./authScreens/PasswordResetScreen";
 
 const Stack = createNativeStackNavigator();
 
 const MainScreen = () => {
-  const { userData } = useSelector((state) => state.onboarding);
+  const { acgUserData } = useSelector((state) => state.acgUser);
   return (
     <>
-      <StatusBar style="light" backgroundColor={"#fff"} />
+      <StatusBar style="dark" backgroundColor={"#fff"} translucent={true} />
       <NavigationContainer>
         <Stack.Navigator>
           <Stack.Screen
@@ -37,6 +41,7 @@ const MainScreen = () => {
             options={{
               headerShown: false,
               statusBarHidden: false,
+              statusBarTranslucent: true,
             }}
             component={OnboardingScreen1}
           />
@@ -58,6 +63,8 @@ const MainScreen = () => {
             name="signup"
             options={{
               headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
             }}
             component={SignUpScreen}
           />
@@ -65,6 +72,8 @@ const MainScreen = () => {
             name="login"
             options={{
               headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
             }}
             component={LoginScreen}
           />
@@ -72,9 +81,39 @@ const MainScreen = () => {
             name="verify"
             options={{
               headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
             }}
             component={VerifyUserScreen}
           />
+          <Stack.Screen
+            name="forgotPassword"
+            options={{
+              headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
+            }}
+            component={ForgotPasswordScreen}
+          />
+          <Stack.Screen
+            name="verifyPasswordReset"
+            options={{
+              headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
+            }}
+            component={VerifyPasswordResetScreen}
+          />
+          <Stack.Screen
+            name="passwordReset"
+            options={{
+              headerShown: false,
+              statusBarHidden: false,
+              statusBarTranslucent: true,
+            }}
+            component={PasswordResetScreen}
+          />
+
           <Stack.Screen
             name="email"
             options={{

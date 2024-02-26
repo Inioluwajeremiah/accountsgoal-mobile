@@ -6,6 +6,8 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  Platform,
+  TouchableOpacity,
 } from "react-native";
 import React, { useState } from "react";
 import icon from "../../../assets/icon.png";
@@ -16,6 +18,7 @@ import CustomPhoneInput from "../../components/CustomPhonetInput";
 import { useRegisterMutation } from "../../slices/usersApiSlice";
 import isValidEmail from "../../utils/validateEmail";
 import { isValidatePhoneNumber } from "../../utils/validatePhone";
+import accountgoal from "../../../assets/accounts.png";
 
 const SignUpScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -52,14 +55,15 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   const handleFullName = (e) => {
-    if (fullName.length < 2) {
+    if (e.length === 0) {
+      setFullName(e);
       setIsFullNameValid(false);
       if (isDisabledArray.includes("fullname")) {
         setisDisabledArray((prevArray) =>
           prevArray.filter((item) => item !== "fullname")
         );
       }
-    } else if (fullName.length > 3) {
+    } else {
       setFullName(e);
       setIsFullNameValid(true);
       if (!isDisabledArray.includes("fullname")) {
@@ -112,24 +116,41 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   const handleSignup = async () => {
+    // navigation.navigate("verify");
     try {
       const res = await register({
         email,
         fullName,
-        mobile,
+        mobile: countryCode + mobile,
         password,
         confirmPassword,
       });
+      if (res.error) {
+        console.log("signup response ===>", res);
+        Alert.alert("", res.error?.message || res.error.data.msg);
+        return;
+      }
+
       Alert.alert("", "Sign up succesfully!");
-      navigation.navigate("verify");
+      console.log("sign up response ===>> ", res);
+      navigation.navigate("verify", res);
     } catch (error) {
-      Alert.alert("", error?.message);
+      console.log("signup error ===>", error);
+      Alert.alert("", error?.message || error.data.msg);
     }
   };
   return (
-    <KeyboardAvoidingView>
-      <ScrollView className="px-4" contentContainerStyle={{ flexGrow: 1 }}>
-        <Image source={icon} className="h-12 w-12 flex self-center" />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="absolute top-0 left-0 w-full h-full flex-1"
+      keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-5">
+        <Image
+          source={accountgoal}
+          className=" h-12 w-1/2 object-contain flex self-center mt-8"
+        />
+
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           Create account
         </CustomTextRegular>
@@ -144,42 +165,45 @@ const SignUpScreen = ({ navigation }) => {
           label={"Email"}
           required={true}
           isValid={isEmailValid}
-          onChangeText={(text) => handleEmail(text)}
+          onChangeText={handleEmail}
         />
         <CustomTextInput
+          value={fullName}
           labelColor={"#D7D7D7"}
           placeholder="John Doe"
           label={"Full Name"}
           required={true}
           isValid={isFullNameValid}
-          onChangeText={(text) => handleFullName(text)}
+          onChangeText={handleFullName}
         />
         {/* phone number */}
-        {/* <CustomPhoneInput
+        <CustomPhoneInput
           labelColor={"#D7D7D7"}
           label={"Phone Number"}
           placeholder="60132776328"
           selectedCode={countryCode}
           onSelectCode={(code) => setCountryCode(code)}
-          onChangeText={(text) => handlePhoneNumber(text)}
-        /> */}
+          onChangeText={(text) => setMobile(text)}
+        />
         <CustomTextInput
+          // value={password}
           secureTextEntry={true}
           labelColor={"#D7D7D7"}
           placeholder="********"
           label={"Password"}
           required={true}
           isValid={isValidPassword}
-          onChangeText={(text) => handlePassword(text)}
+          onChangeText={handlePassword}
         />
         <CustomTextInput
+          // value={confirmPassword}
           secureTextEntry={true}
           labelColor={"#D7D7D7"}
           placeholder="********"
           label={"Confirm Password"}
           required={true}
           isValid={isValidCPassword}
-          onChangeText={(text) => handleConfrmPassword(text)}
+          onChangeText={handleConfrmPassword}
         />
         <LongButtonUnFixed
           isLoading={isLoading}
@@ -191,17 +215,17 @@ const SignUpScreen = ({ navigation }) => {
           marginTop={60}
           on_press={handleSignup}
         />
+        {/* already have an account */}
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
           <CustomTextRegular className="text-sm text-primary-accent-color">
-            {" "}
             Already have an account
           </CustomTextRegular>
-          <Pressable>
+          <TouchableOpacity onPress={() => navigation.navigate("login")}>
             <CustomTextRegular className="text-primary-color text-base font-semibold">
               {" "}
               Login
             </CustomTextRegular>
-          </Pressable>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

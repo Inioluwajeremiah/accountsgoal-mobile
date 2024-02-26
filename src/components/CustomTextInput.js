@@ -38,10 +38,13 @@ const CustomTextInput = ({
         placeholderTextColor={labelColor}
         className={`border ${
           isValid ? "border-border-color" : "border-red-600"
-        }  rounded-full px-6 py-3 mt-4 ${
-          isValid ? "text-border-color" : "text-red-600"
-        }  `}
+        }  rounded-full px-6 py-3 mt-4 
+       
+        `}
       />
+      {/* ${
+          isValid ? "text-border-color" : "text-red-600"
+        }   */}
     </View>
   );
 };

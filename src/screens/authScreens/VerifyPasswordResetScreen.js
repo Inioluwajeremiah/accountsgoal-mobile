@@ -7,7 +7,6 @@ import {
   Pressable,
   Platform,
   TextInput,
-  Alert,
 } from "react-native";
 import React, { createRef, useState } from "react";
 import accountgoal from "../../../assets/accounts.png";
@@ -15,12 +14,10 @@ import CustomTextRegular from "../../components/CustomTextRegular";
 import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import { windowWidth } from "../../utils/Dimensions";
-import { useVerifyMutation } from "../../slices/usersApiSlice";
 
-const VerifyUserScreen = ({ navigation, route }) => {
-  const [verify, { isLoading }] = useVerifyMutation();
-  const fromParam = route.params;
-
+const VerifyPasswordResetScreen = ({ navigation, route }) => {
+  // const [verify, { isLoading }] = useVerifyMutation();
+  // const { email, role, password } = route.params;
   const email = "user@gloriation.com";
   const trimedEmail = email.split("@")[0];
   const boxSize = windowWidth / 6.5;
@@ -32,26 +29,27 @@ const VerifyUserScreen = ({ navigation, route }) => {
   const [p3, setP3] = useState("");
   const [p4, setP4] = useState("");
 
-  const handleVerify = async () => {
-    const otp = `${p1}${p2}${p3}${p4}`;
-    console.log(otp);
-    try {
-      const res = await verify({ userId: fromParam.userId, otp: otp }).unwrap();
-      // dispatch(setCredentials({ ...res }));
-      if (res.error) {
-        console.log("signup response ===>", res);
-        Alert.alert("", res.error?.message || res.data.msg);
-        return;
-      }
-      Alert.alert("", res.success);
-      setTimeout(() => {
-        navigation.navigate("email ");
-      }, 1000);
-    } catch (error) {
-      console.log(error);
-      Alert.alert("", error?.data?.error || error.error || error?.data?.msg);
-    }
+  const handleSignup = async () => {
+    navigation.navigate("login");
   };
+  // const handleVerify = async () => {
+  //   const otp = `${p1}${p2}${p3}${p4}`;
+  //   console.log(otp);
+  //   try {
+  //     const res = await verify({ email, otp }).unwrap();
+  //     // dispatch(setCredentials({ ...res }));
+  //     Alert.alert("", res.success);
+  //     setTimeout(() => {
+  //       navigation.navigate("Emailsuccess");
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.log(error);
+  //     Alert.alert(
+  //       "",
+  //       error?.data?.error || error.error || error?.data?.message
+  //     );
+  //   }
+  // };
 
   const handleCodes = [
     (e) => {
@@ -92,7 +90,7 @@ const VerifyUserScreen = ({ navigation, route }) => {
           className=" h-12 w-1/2 object-contain flex self-center mt-8"
         />
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
-          OTP Verification
+          Password Reset
         </CustomTextRegular>
         <CustomTextRegular className="text-secondary-accent-color text-center text-sm my-3 leading-6">
           We’ve sent an otp to the mail you provided us
@@ -124,14 +122,14 @@ const VerifyUserScreen = ({ navigation, route }) => {
         </View>
 
         <LongButtonUnFixed
-          isLoading={isLoading}
+          // isLoading={isLoading}
           text="Verify"
           textColor={"#fff"}
           bgColor={"#4169E1"}
           isDisabled={false}
           disabled={false}
           marginTop={60}
-          on_press={handleVerify}
+          on_press={() => navigation.navigate("passwordReset")}
         />
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
           <CustomTextRegular className="text-sm text-primary-accent-color">
@@ -149,4 +147,4 @@ const VerifyUserScreen = ({ navigation, route }) => {
   );
 };
 
-export default VerifyUserScreen;
+export default VerifyPasswordResetScreen;
