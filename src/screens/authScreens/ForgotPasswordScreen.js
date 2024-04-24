@@ -6,20 +6,24 @@ import {
   ScrollView,
   Pressable,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import accountgoal from "../../../assets/accounts.png";
-import { useLoginMutation } from "../../slices/usersApiSlice";
+import {
+  useForgetPasswordMutation,
+  useLoginMutation,
+} from "../../slices/usersApiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setAcgUserData } from "../../slices/userSlice";
 import TickIcon from "../../Icons/TickIcon";
 import isValidEmail from "../../utils/validateEmail";
 
 const ForgotPasswordScreen = ({ navigation }) => {
-  const [login, { isLoading, error }] = useLoginMutation();
+  const [forgetPassword, { isLoading, error }] = useForgetPasswordMutation();
   const [email, setEmail] = useState("");
   const [isEmailValid, setIsEmailValid] = useState(true);
 
@@ -33,10 +37,31 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   const handleSendCode = async () => {
-    navigation.navigate("verifyPasswordReset");
-    const response = await login({ email });
-    if (response?.success) {
-      navigation.navigate("Home");
+    try {
+      const response = await forgetPassword({ email });
+
+      console.log("email => ", email);
+
+      if (response.error) {
+        console.log("signup response ===>", response);
+        Alert.alert(
+          "",
+          response.error?.message ||
+            response.error.data?.msg ||
+            response.error?.msg
+        );
+        return;
+      }
+      if (response?.data) {
+        setTimeout(() => {
+          Alert.alert("", response.data.message);
+          navigation.navigate("verifyPasswordReset");
+        }, 1000);
+      }
+
+      console.log("login response ====>", response);
+    } catch (error) {
+      console.log("login error ===> ", error);
     }
   };
   return (
@@ -64,7 +89,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         />
 
         <LongButtonUnFixed
-          // isLoading={isLoading}
+          isLoading={isLoading}
           text="Send Code"
           textColor={"#fff"}
           bgColor={"#4169E1"}

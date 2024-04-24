@@ -4,10 +4,13 @@ import CustomTextRegular from "../components/CustomTextRegular";
 import SplashIcon from "../../assets/SplashIcon";
 import { useSelector } from "react-redux";
 import { StatusBar } from "expo-status-bar";
+import { ScrollView } from "react-native-gesture-handler";
 
 const SplashScreen = ({ navigation, route }) => {
-  const { accountsGoalUser } = useSelector((state) => state.acgUser);
-  const { onboarding } = useSelector((state) => state.acgUser);
+  const { accountsGoalUser, onboarding } = useSelector(
+    (state) => state.acgUser
+  );
+  // const { onboarding } = useSelector((state) => state.acgUser);
   console.log("user data at splashscreen =>>>> ", accountsGoalUser);
   useEffect(() => {
     const navigateToScreen = async () => {
@@ -16,34 +19,36 @@ const SplashScreen = ({ navigation, route }) => {
           index: 0,
           routes: [
             {
-              // name: `${
-              //   userData?.login &&
-              //   userData?.role === "footballer" &&
-              //   userData?.isCompleteOnboarding === true
-              //     ? "footballerStackScreen"
-              //     : userData?.login &&
-              //       userData?.role === "footballer" &&
-              //       !userData?.isCompleteOnboarding
-              //     ? "footballer_onboarding_first"
-              //     : userData?.login && userData?.role === "admin"
-              //     ? "adminStackScreen"
-              //     : userData?.login &&
-              //       userData?.role === "scout" &&
-              //       userData?.isCompleteOnboarding
-              //     ? "scoutStackScreen"
-              //     : userData?.login &&
-              //       userData?.role === "scout" &&
-              //       !userData?.isCompleteOnboarding
-              //     ? "scout_onboarding_first"
-              //     : "authStackScreen"
-              // }`,
+              name: `${
+                accountsGoalUser?.login &&
+                accountsGoalUser?.role === "footballer" &&
+                accountsGoalUser?.isCompleteOnboarding === true
+                  ? "footballerStackScreen"
+                  : accountsGoalUser?.login &&
+                      accountsGoalUser?.role === "footballer" &&
+                      !accountsGoalUser?.isCompleteOnboarding
+                    ? "footballer_onboarding_first"
+                    : accountsGoalUser?.login &&
+                        accountsGoalUser?.role === "admin"
+                      ? "adminStackScreen"
+                      : accountsGoalUser?.login &&
+                          accountsGoalUser?.role === "scout" &&
+                          accountsGoalUser?.isCompleteOnboarding
+                        ? "scoutStackScreen"
+                        : accountsGoalUser?.login &&
+                            accountsGoalUser?.role === "scout" &&
+                            !accountsGoalUser?.isCompleteOnboarding
+                          ? "scout_onboarding_first"
+                          : "authStackScreen"
+              }`,
               name: `${
                 onboarding && accountsGoalUser?.login
                   ? "Home"
                   : onboarding && !accountsGoalUser?.login
-                  ? "login"
-                  : "onboard1"
+                    ? "login"
+                    : "onboard1"
               }`,
+              // name: `${"verify"}`,
             },
           ],
         });

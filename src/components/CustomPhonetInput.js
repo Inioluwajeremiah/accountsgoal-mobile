@@ -52,7 +52,7 @@ const CustomPhoneInput = ({
   };
 
   return (
-    <View className=" mt-6">
+    <View className=" mt-10">
       {/* label */}
       <View className="flex flex-row items-top gap-x-2">
         <CustomTextRegular className="text-sm text-black">
@@ -71,7 +71,9 @@ const CustomPhoneInput = ({
           className="w-[30%] pl-6 pr-3 py-3 border-r border-border-color flex flex-row justify-center items-center  "
           onPress={handleToggle}
         >
-          <CustomTextRegular className="text-border-color text-xs tracking-wider mr-2 ">
+          <CustomTextRegular
+            className={`${selectedCode ? "text-black" : "text-border-color"} text-xs tracking-wider mr-2 `}
+          >
             {selectedCode ? selectedCode : "+1"}
           </CustomTextRegular>
           <IconCaretDropdown />
@@ -82,7 +84,9 @@ const CustomPhoneInput = ({
           {...props}
           cursorColor={labelColor}
           placeholderTextColor={labelColor}
-          className={`w-[70%] px-4  caret-border-color text-border-color placeholder-border-color py-3`}
+          maxLength={10}
+          keyboardType={"number-pad"}
+          className={`w-[70%] px-4  caret-border-color text-black text-xs  py-3`}
         />
       </View>
 
@@ -95,7 +99,7 @@ const CustomPhoneInput = ({
             placeholder="Filter"
             cursorColor={labelColor}
             placeholderTextColor={labelColor}
-            className={` px-6 py-3 my-4   border border-border-color`}
+            className={` px-6 py-3 my-4  text-xs  border border-border-color`}
             onChangeText={(text) => handleFilterCountryCodes(text)}
           />
           {countryCodes.map((item, index) => (

@@ -7,19 +7,38 @@ import {
   Pressable,
   Platform,
   TextInput,
+  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import React, { createRef, useState } from "react";
+import React, { createRef, useEffect, useState } from "react";
 import accountgoal from "../../../assets/accounts.png";
 import CustomTextRegular from "../../components/CustomTextRegular";
-import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import { windowWidth } from "../../utils/Dimensions";
+import { formatTime } from "../../utils/formatTIme";
+import {
+  useRegisterMutation,
+  useResendOtpMutation,
+  useVerifyMutation,
+} from "../../slices/usersApiSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserId } from "../../slices/userSlice";
 
 const VerifyPasswordResetScreen = ({ navigation, route }) => {
-  // const [verify, { isLoading }] = useVerifyMutation();
-  // const { email, role, password } = route.params;
-  const email = "user@gloriation.com";
-  const trimedEmail = email.split("@")[0];
+  const { userId } = useSelector((state) => state.acgUser);
+  const dispatch = useDispatch();
+
+  console.log("userId ===> ", userId);
+  const [verify, { isLoading }] = useVerifyMutation();
+  const [register, { isLoading: loadingResend }] = useRegisterMutation();
+  const [resendOtp, { isLoading: loadingOtp, error: otpError }] =
+    useResendOtpMutation();
+
+  const fromParam = route.params;
+
+  console.log("fromParam  ===> ", fromParam);
+
   const boxSize = windowWidth / 6.5;
   const boxArray = [...Array(4).keys()];
   const pRefs = Array.from({ length: boxArray.length }, () => createRef());
@@ -29,27 +48,44 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
   const [p3, setP3] = useState("");
   const [p4, setP4] = useState("");
 
-  const handleSignup = async () => {
-    navigation.navigate("login");
+  const [countDown, setCountDown] = useState(60);
+
+  useEffect(() => {
+    const x = setInterval(() => {
+      if (countDown > 0) {
+        setCountDown((prevCount) => prevCount - 1);
+      }
+    }, 1000);
+    return () => clearInterval(x);
+  }, [countDown]);
+
+  const handleVerify = async () => {
+    const otp = `${p1}${p2}${p3}${p4}`;
+    console.log(otp);
+    try {
+      const res = await verify({
+        userId: userId,
+        otp: otp,
+      });
+      // dispatch(setCredentials({ ...res }));
+      if (res.error) {
+        console.log("signup response ===>", res);
+        Alert.alert(
+          "",
+          res.error?.message || res.error.data?.msg || res.error?.msg
+        );
+        return;
+      }
+      console.log("verify user ==>", res);
+      Alert.alert("", res.data?.message);
+      setTimeout(() => {
+        navigation.navigate("passwordReset");
+      }, 1000);
+    } catch (error) {
+      console.log(error);
+      Alert.alert("", error?.data?.error || error.error || error?.data?.msg);
+    }
   };
-  // const handleVerify = async () => {
-  //   const otp = `${p1}${p2}${p3}${p4}`;
-  //   console.log(otp);
-  //   try {
-  //     const res = await verify({ email, otp }).unwrap();
-  //     // dispatch(setCredentials({ ...res }));
-  //     Alert.alert("", res.success);
-  //     setTimeout(() => {
-  //       navigation.navigate("Emailsuccess");
-  //     }, 1000);
-  //   } catch (error) {
-  //     console.log(error);
-  //     Alert.alert(
-  //       "",
-  //       error?.data?.error || error.error || error?.data?.message
-  //     );
-  //   }
-  // };
 
   const handleCodes = [
     (e) => {
@@ -81,6 +117,34 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
       }
     },
   ];
+
+  const handleResendCode = async () => {
+    try {
+      const res = await resendOtp(fromParam);
+      console.log("sign up response ===>> ", res);
+      if (res.data) {
+        dispatch(setUserId(res.data.userId));
+      }
+      if (res.error) {
+        console.log("signup response error ===>", res);
+        Alert.alert(
+          "",
+          res.error?.message ||
+            res.error.data?.msg ||
+            res.error?.msg ||
+            res.error?.error
+        );
+        return;
+      }
+
+      Alert.alert("", "Sign up succesfully!");
+
+      navigation.navigate("verify", res);
+    } catch (error) {
+      console.log("signup error ===>", error);
+      Alert.alert("", error?.message || error.data.msg);
+    }
+  };
 
   return (
     <KeyboardAvoidingView>
@@ -122,23 +186,29 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
         </View>
 
         <LongButtonUnFixed
-          // isLoading={isLoading}
+          isLoading={isLoading}
           text="Verify"
           textColor={"#fff"}
           bgColor={"#4169E1"}
           isDisabled={false}
           disabled={false}
           marginTop={60}
-          on_press={() => navigation.navigate("passwordReset")}
+          on_press={handleVerify}
         />
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
-          <CustomTextRegular className="text-sm text-primary-accent-color">
-            Send Code again
-          </CustomTextRegular>
+          <TouchableOpacity onPress={handleResendCode}>
+            {loadingResend ? (
+              <ActivityIndicator size={"small"} color={"#4169E1"} />
+            ) : (
+              <CustomTextRegular className="text-sm text-primary-accent-color">
+                Send Code again
+              </CustomTextRegular>
+            )}
+          </TouchableOpacity>
           <Pressable>
             <CustomTextRegular className="text-bold text-base font-semibold">
               {" "}
-              00:30
+              {formatTime(countDown)}
             </CustomTextRegular>
           </Pressable>
         </View>

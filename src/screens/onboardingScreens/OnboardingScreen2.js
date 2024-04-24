@@ -4,6 +4,7 @@ import OnboardingIndicator from "../../components/OnboardingIndicator";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import onboarding2 from "../../../assets/onboarding2.png";
 import OnboardingButton from "../../components/OnboardingButton";
+import { StatusBar } from "expo-status-bar";
 
 const OnboardingScreen2 = ({ navigation }) => {
   const handleMoveToScreen3 = () => {

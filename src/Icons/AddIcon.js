@@ -1,6 +1,6 @@
 import { Path, Svg } from "react-native-svg";
 
-const AddIcon = () => {
+const AddIcon = ({ color }) => {
   return (
     <Svg
       width="16"
@@ -11,17 +11,17 @@ const AddIcon = () => {
     >
       <Path
         d="M8 3.16675V13.8334"
-        stroke="black"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
       <Path
         d="M2.66663 8.5H13.3333"
-        stroke="black"
-        stroke-width="1.5"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </Svg>
   );

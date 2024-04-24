@@ -1,8 +1,11 @@
 import {
+  ALL_USERS,
   FORGET_PASSWORD_URL,
   LOGIN_URL,
   LOGOUT_URL,
+  PASSWORD_RESET_URL,
   REGISTER_URL,
+  RESEND_OTP_URL,
   VERIFY_URL,
 } from "../utils/Endpoints";
 import { apiSlice } from "./createApiSlice";
@@ -30,17 +33,24 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         body: data,
       }),
     }),
-    // resend: builder.mutation({
-    //   query: (data) => ({
-    //     url: `${USER_URL}`,
-    //     method: "POST",
-    //     body: data,
-    //   }),
-    // }),
+    resendOtp: builder.mutation({
+      query: (data) => ({
+        url: `${RESEND_OTP_URL}`,
+        method: "POST",
+        body: data,
+      }),
+    }),
     forgetPassword: builder.mutation({
       query: (data) => ({
         url: `${FORGET_PASSWORD_URL}`,
         method: "POST",
+        body: data,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: `${PASSWORD_RESET_URL}`,
+        method: "PATCH",
         body: data,
       }),
     }),
@@ -57,13 +67,13 @@ export const usersApiSlice = apiSlice.injectEndpoints({
     //     body: data,
     //   }),
     // }),
-    // getUsers: builder.query({
-    //   query: () => ({
-    //     url: `${USER_URL}`,
-    //   }),
-    //   providesTags: ["Users"],
-    //   keepUnusedDataFor: 5,
-    // }),
+    getAllUsers: builder.query({
+      query: () => ({
+        url: `${ALL_USERS}`,
+      }),
+      providesTags: ["User"],
+      keepUnusedDataFor: 5,
+    }),
     // deleteUser: builder.mutation({
     //   query: (userId) => ({
     //     url: `${USER_URL}/${userId}`,
@@ -76,14 +86,28 @@ export const usersApiSlice = apiSlice.injectEndpoints({
     //   }),
     //   keepUnusedDataFor: 5,
     // }),
-    // updateUser: builder.mutation({
-    //   query: (data) => ({
-    //     url: `${USER_URL}/${data.userId}`,
-    //     method: "PUT",
-    //     body: data,
-    //   }),
-    //   invalidatesTags: ["Users"],
-    // }),
+    updateUser: builder.mutation({
+      query: (data) => ({
+        url: "updateuser/",
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
+    updatePassword: builder.mutation({
+      query: (data) => ({
+        url: "updatepassword/",
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${data.token}`,
+        },
+        body: data,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -91,12 +115,11 @@ export const {
   useLoginMutation,
   useLogoutMutation,
   useRegisterMutation,
+  useResendOtpMutation,
   useForgetPasswordMutation,
   useVerifyMutation,
-  useResendMutation,
-  useProfileMutation,
-  useGetUsersQuery,
-  useDeleteUserMutation,
-  useGetUserDetailsQuery,
+  useResetPasswordMutation,
+  useGetAllUsersQuery,
   useUpdateUserMutation,
+  useUpdatePasswordMutation,
 } = usersApiSlice;

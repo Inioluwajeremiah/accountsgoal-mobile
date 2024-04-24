@@ -14,10 +14,7 @@ import icon from "../../../assets/icon.png";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
-import CustomPhoneInput from "../../components/CustomPhonetInput";
-import { useRegisterMutation } from "../../slices/usersApiSlice";
-import isValidEmail from "../../utils/validateEmail";
-import { isValidatePhoneNumber } from "../../utils/validatePhone";
+import { useResetPasswordMutation } from "../../slices/usersApiSlice";
 import accountgoal from "../../../assets/accounts.png";
 
 const PasswordResetScreen = ({ navigation }) => {
@@ -27,7 +24,7 @@ const PasswordResetScreen = ({ navigation }) => {
   const [isValidPassword, setIsValidPassword] = useState(true);
   const [isValidCPassword, setIsValidCPassword] = useState(true);
 
-  const [register, { isLoading }] = useRegisterMutation();
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
 
   const handlePassword = (e) => {
     if (e.length < 6) {
@@ -50,21 +47,22 @@ const PasswordResetScreen = ({ navigation }) => {
   const handleResetPassword = async () => {
     // navigation.navigate("verify");
     try {
-      const res = await register({
-        email,
-        fullName,
-        mobile: countryCode + mobile,
+      const res = await resetPassword({
         password,
         confirmPassword,
       });
       if (res.error) {
-        console.log("signup response ===>", res);
+        console.log("password reset ===>", res);
         Alert.alert("", res.error?.message || res.error.error);
         return;
       }
 
-      Alert.alert("", "Sign up succesfully!");
-      navigation.navigate("verify");
+      if (res.data) {
+        setInterval(() => {
+          Alert.alert("", res.data.message);
+          navigation.navigate("passwordAlert");
+        }, 1000);
+      }
     } catch (error) {
       console.log("signup error ===>", error);
       Alert.alert("", error?.message || error.error.error);

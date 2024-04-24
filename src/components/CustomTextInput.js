@@ -1,6 +1,6 @@
 import { TextInput, View } from "react-native";
-import CustomTextRegular from "./CustomTextRegular";
 import { useFonts } from "expo-font";
+import LabelComponent from "./LabelComponent";
 
 const CustomTextInput = ({
   label,
@@ -18,25 +18,16 @@ const CustomTextInput = ({
     return null;
   }
   return (
-    <View className="mt-6">
+    <View className="">
       {/* label */}
-      <View className="flex flex-row items-top gap-x-2">
-        <CustomTextRegular className="text-sm text-black">
-          {label}
-        </CustomTextRegular>
-        {required && (
-          <CustomTextRegular className="text-sm text-red-600">
-            *
-          </CustomTextRegular>
-        )}
-      </View>
 
+      <LabelComponent label={label} required={required} />
       <TextInput
         {...props}
         style={{ fontFamily: "inter" }}
         cursorColor={labelColor}
         placeholderTextColor={labelColor}
-        className={`border ${
+        className={`border text-xs ${
           isValid ? "border-border-color" : "border-red-600"
         }  rounded-full px-6 py-3 mt-4 
        

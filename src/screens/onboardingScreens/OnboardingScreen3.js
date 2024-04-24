@@ -5,13 +5,13 @@ import CustomTextRegular from "../../components/CustomTextRegular";
 import onboarding3 from "../../../assets/onboarding3.png";
 import OnboardingButton from "../../components/OnboardingButton";
 import { useDispatch } from "react-redux";
-import { setAcgUserData } from "../../slices/userSlice";
+import { setAcgUserOnboarding } from "../../slices/userSlice";
 
 const OnboardingScreen3 = ({ navigation }) => {
   const dispatch = useDispatch();
   // handle onboarding
   const handleOnboarding = () => {
-    dispatch(setAcgUserData({ onboarding: true }));
+    dispatch(setAcgUserOnboarding({ onboarding: true }));
     navigation.navigate("signup");
   };
   return (

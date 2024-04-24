@@ -4,7 +4,15 @@ Chat integration, Bot,
 Whatsapp integration, 
 otp integration => email is more prefferable,
 
+davidson@accountsgoal.com
+Accountsgoal12@
+
+
+ create event is sucessfull, next is get all events, edit and delete event
 */
+
+// npx expo install --check
+//  eas build --profile preview --platform android
 
 <Drawer.Navigator
   style={{ flex: 1 }}

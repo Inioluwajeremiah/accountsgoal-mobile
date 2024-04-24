@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   KeyboardAvoidingView,
   Image,
   ScrollView,
@@ -8,24 +7,48 @@ import {
   Platform,
   TextInput,
   Alert,
+  TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
-import React, { createRef, useState } from "react";
+import React, { createRef, useEffect, useState } from "react";
 import accountgoal from "../../../assets/accounts.png";
 import CustomTextRegular from "../../components/CustomTextRegular";
-import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import { windowWidth } from "../../utils/Dimensions";
-import { useVerifyMutation } from "../../slices/usersApiSlice";
+import {
+  useRegisterMutation,
+  useResendOtpMutation,
+  useVerifyMutation,
+} from "../../slices/usersApiSlice";
+import { formatTime } from "../../utils/formatTIme";
+import { useDispatch } from "react-redux";
+import { setUserId } from "../../slices/userSlice";
 
 const VerifyUserScreen = ({ navigation, route }) => {
   const [verify, { isLoading }] = useVerifyMutation();
+  const [resendOtp, { isLoading: loadingResend, error: otpError }] =
+    useResendOtpMutation();
+
+  const dispatch = useDispatch();
   const fromParam = route.params;
+
+  console.log("from signup param ===> ", fromParam);
 
   const email = "user@gloriation.com";
   const trimedEmail = email.split("@")[0];
   const boxSize = windowWidth / 6.5;
   const boxArray = [...Array(4).keys()];
   const pRefs = Array.from({ length: boxArray.length }, () => createRef());
+  const [countDown, setCountDown] = useState(60);
+
+  useEffect(() => {
+    const x = setInterval(() => {
+      if (countDown > 0) {
+        setCountDown((prevCount) => prevCount - 1);
+      }
+    }, 1000);
+    return () => clearInterval(x);
+  }, [countDown]);
 
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
@@ -36,16 +59,23 @@ const VerifyUserScreen = ({ navigation, route }) => {
     const otp = `${p1}${p2}${p3}${p4}`;
     console.log(otp);
     try {
-      const res = await verify({ userId: fromParam.userId, otp: otp }).unwrap();
+      const res = await verify({
+        userId: fromParam.data.data.userId,
+        otp: otp,
+      });
       // dispatch(setCredentials({ ...res }));
       if (res.error) {
         console.log("signup response ===>", res);
-        Alert.alert("", res.error?.message || res.data.msg);
+        Alert.alert(
+          "",
+          res.error?.message || res.error.data?.msg || res.error?.msg
+        );
         return;
       }
-      Alert.alert("", res.success);
+      console.log("verify user ==>", res);
+      Alert.alert("", res.data?.message);
       setTimeout(() => {
-        navigation.navigate("email ");
+        navigation.navigate("email");
       }, 1000);
     } catch (error) {
       console.log(error);
@@ -83,6 +113,27 @@ const VerifyUserScreen = ({ navigation, route }) => {
       }
     },
   ];
+
+  const handleResendCode = async () => {
+    setCountDown(0);
+    try {
+      const res = await resendOtp(fromParam.data.data);
+      console.log("resend otp response ===>> ", res);
+      if (res?.data) {
+        Alert.alert("", res.data.message);
+        dispatch(setUserId(res.data.userId));
+        setCountDown(60);
+      }
+      if (res?.error) {
+        console.log("otp response error ii ===>", res);
+        Alert.alert("", res.error.data?.msg);
+        return;
+      }
+    } catch (error) {
+      console.log("signup error ===>", error);
+      Alert.alert("", error?.message);
+    }
+  };
 
   return (
     <KeyboardAvoidingView>
@@ -128,21 +179,28 @@ const VerifyUserScreen = ({ navigation, route }) => {
           text="Verify"
           textColor={"#fff"}
           bgColor={"#4169E1"}
-          isDisabled={false}
-          disabled={false}
+          isDisabled={countDown <= 0 ? true : false}
+          disabled={countDown <= 0 ? true : false}
           marginTop={60}
           on_press={handleVerify}
         />
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
-          <CustomTextRegular className="text-sm text-primary-accent-color">
-            Send Code again
-          </CustomTextRegular>
-          <Pressable>
+          <TouchableOpacity onPress={handleResendCode}>
+            {loadingResend ? (
+              <ActivityIndicator size={"small"} color={"#4169E1"} />
+            ) : (
+              <CustomTextRegular className="text-sm text-primary-accent-color">
+                Send Code again
+              </CustomTextRegular>
+            )}
+          </TouchableOpacity>
+          <View>
             <CustomTextRegular className="text-bold text-base font-semibold">
               {" "}
-              00:30
+              {/* {formatTime(countDown) > 0 ? } */}
+              {countDown > 0 ? countDown : ""}
             </CustomTextRegular>
-          </Pressable>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
