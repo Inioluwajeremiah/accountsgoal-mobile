@@ -16,8 +16,6 @@ import CustomTextRegular from "../../components/CustomTextRegular";
 import FilterIcon from "../../Icons/FilterIcon";
 import SearchIcon from "../../Icons/SearchIcon";
 import AddIcon from "../../Icons/AddIcon";
-import CompletedTodoComponent from "../../components/CompletedTodoComponent";
-import PendingTodoComponent from "../../components/PendingTodoComponent";
 import LabelComponent from "../../components/LabelComponent";
 import TextInputComponent from "../../components/TextInputComponent";
 import CalendarIcon from "../../Icons/CalendarIcon";
@@ -32,15 +30,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSelector } from "react-redux";
 import DropDownAlert from "../../components/DropDownAlert";
 import { priorityData, toggleData } from "../../utils/dummyData";
-import LottieView from "lottie-react-native";
 import LottieLoadingScreen from "../../components/LottieLoadingScreen";
+import TodoTabs from "./dashboardComponents/TodoTabs";
 
 const TodoScreen = ({ navigation }) => {
   const { accountsGoalUser, onboarding } = useSelector(
     (state) => state.acgUser
   );
   console.log("accountsGoalUser ===> ", accountsGoalUser);
-  const [active, setActive] = useState(0);
+
   const [toggleModal, setToggleModal] = useState(false);
   const [togglePriority, setTogglePriority] = useState(false);
   const [toggleReminder, setToggleReminder] = useState(false);
@@ -89,9 +87,6 @@ const TodoScreen = ({ navigation }) => {
   //   setPendinTodoData(pendingTodoData);
   // }
 
-  const handleToggleActive = (index) => {
-    setActive(index);
-  };
   const handleToggleAddTodoModal = () => {
     setToggleModal(!toggleModal);
   };
@@ -213,53 +208,16 @@ const TodoScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
-      {/* tabs */}
-      <View className="px-5 flex flex-row justify-between pt-4 bg-white">
-        {toggleData.map((item, index) => (
-          <Pressable
-            key={index}
-            className="w-1/2 py-2"
-            style={{
-              borderBottomWidth: active === index ? 4 : 0,
-              borderBottomColor: active === index ? "#4169E1" : "",
-            }}
-            onPress={() => handleToggleActive(index)}
-          >
-            <CustomTextRegular className="text-center ">
-              {item.title}
-            </CustomTextRegular>
-          </Pressable>
-        ))}
-      </View>
-      {/* flatlist */}
-      {active === 0 && (
-        <PendingTodoComponent
-          pendingTodoData={
-            (filterPriority &&
-              pendingTodoData.filter(
-                (item) => item.setPirority === filterPriority
-              )) ||
-            pendingTodoData
-          }
-          loading={loadingTodos}
-          toggleSearchModal={toggleSearchModal}
-          handleToggleSearchModal={handleToggleSearchModal}
-          refetch={refetch}
-        />
-      )}
-      {active === 1 && (
-        <CompletedTodoComponent
-          completedTodoData={
-            (filterPriority &&
-              completedTodoData.filter(
-                (item) => item.setPirority === filterPriority
-              )) ||
-            completedTodoData
-          }
-          loading={loadingTodos}
-          refetch={refetch}
-        />
-      )}
+      {/* todo tabs */}
+      <TodoTabs
+        pendingTodoData={pendingTodoData}
+        filterPriority={filterPriority}
+        loadingTodos={loadingTodos}
+        toggleSearchModal={toggleSearchModal}
+        handleToggleSearchModal={handleToggleSearchModal}
+        refetch={refetch}
+      />
+
       {/* add icon */}
       <TouchableOpacity
         className="absolute right-10 bottom-10 w-[60px] h-[60px] rounded-full bg-primary-color flex items-center justify-center"

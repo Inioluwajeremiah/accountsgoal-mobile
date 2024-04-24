@@ -28,6 +28,16 @@ import { useGetExcelDataQuery } from "../../slices/accountApiSlice";
 import * as Location from "expo-location";
 import MarkerIcon from "../../Icons/MarkerIcon";
 import CaretDown from "../../Icons/CaretDown";
+import GoalIcon from "../../Icons/GoalIcon";
+import AngleRightIcon from "../../Icons/AngleRightIcon";
+import TodoListIcon from "../../Icons/TodoListIcon";
+import ContactIcon from "../../Icons/ContactIcon";
+import CloseButton from "../../Icons/CloseButton";
+import EmailIcon from "../../Icons/EmailIcon";
+import UserIcon from "../../Icons/UserIcon";
+import DobIcon from "../../Icons/DobIcon";
+import PhoneBookIcon from "../../Icons/PhoneBookIcon";
+import EditTodoIcon from "../../Icons/EditTodoIcon";
 
 const dataToUpload = [
   "Account name",
@@ -57,6 +67,10 @@ const MapScreen = ({ navigation }) => {
   const [longitude, setLongitude] = useState("");
   const [latitude, setLatitude] = useState("");
   const [showToolTip, setShowToolTip] = useState(false);
+  const [showPreviewAccount, setShowPreviewAccount] = useState(false);
+  const [currentItem, setCurrentItem] = useState({});
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showTakeActionModal, setShowTakeActionModal] = useState(false);
 
   const isValidForm = true;
   const loadingUploadExcelFile = false;
@@ -78,6 +92,10 @@ const MapScreen = ({ navigation }) => {
   const handleToggleInitialFIleImport = () => {
     dispatch(setImportFile({ importFile: true }));
     setToggleInitialFIleImport(false);
+  };
+
+  const handleGetStarted = () => {
+    setToggleModal(true);
   };
 
   const handleImportExcelFIle = async () => {
@@ -145,6 +163,26 @@ const MapScreen = ({ navigation }) => {
   const toggleTooltip = () => {
     setShowToolTip(!showToolTip);
   };
+
+  const handelToggleAccountPreview = () => {
+    setShowPreviewAccount(!showPreviewAccount);
+  };
+  const handleOnPressMarker = (item) => {
+    setCurrentItem(item);
+    handelToggleAccountPreview();
+  };
+
+  const handleToggleContactModal = () => {
+    setShowContactModal(!showContactModal);
+    setShowPreviewAccount(false);
+    setShowTakeActionModal(false);
+  };
+  const handleToggleTakeActionModal = () => {
+    setShowTakeActionModal(!showTakeActionModal);
+    setShowContactModal(false);
+    setShowPreviewAccount(false);
+  };
+
   useEffect(() => {
     Location.watchPositionAsync(
       {
@@ -226,8 +264,7 @@ const MapScreen = ({ navigation }) => {
                     latitude: parseFloat(item.ADDRESS.split(",")[0].trim()),
                     longitude: parseFloat(item.ADDRESS.split(",")[1].trim()),
                   }}
-                  // title={item.ACCOUNT_NAME}
-                  // description={item.REVENUE}
+                  onPress={() => handleOnPressMarker(item)}
                 >
                   <View className="relative w-10 h-10 rounded-full bg-primary-color flex items-center justify-center">
                     <MarkerIcon />
@@ -380,7 +417,7 @@ const MapScreen = ({ navigation }) => {
               <TouchableOpacity
                 className={`bg-primary-color rounded-full mt-4 h-12 py-3 flx justify-center items-center mb-4  `}
                 disabled={false}
-                onPress={handleImportExcelFIle}
+                onPress={handleGetStarted}
               >
                 <CustomTextRegular className="text-center font-semibold text-white text-base">
                   {loadingUploadExcelFile ? (
@@ -409,6 +446,301 @@ const MapScreen = ({ navigation }) => {
           </View>
         </Modal>
       )}
+
+      {/******************** show preview account *************************/}
+      {showPreviewAccount && (
+        <Modal
+          transparent={true}
+          visible={showPreviewAccount}
+          animationType="none"
+        >
+          <View
+            // style={{ marginTop: StatusBarHeight }}
+            className="h-full w-full bg-black/50 "
+          >
+            <Pressable
+              className="h-[35%] "
+              onPress={handelToggleAccountPreview}
+            />
+
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: "space-between",
+              }}
+              className="px-5  w-full h-[70%] flex flex-col  rounded-t-3xl  bg-screen-bg"
+            >
+              <View className="py-6 ">
+                <TouchableOpacity
+                  className=" w-8 h-8 flex self-end items-center justify-center  p-2"
+                  onPress={handelToggleAccountPreview}
+                >
+                  <View className="w-6 h-6 rounded-full flex items-center justify-center border border-[#A8A8A8]">
+                    <CloseButton color={"#A8A8A8"} />
+                  </View>
+                </TouchableOpacity>
+                <CustomTextRegular className="font-black leading-6 text-base text-black mb-6">
+                  {currentItem.ACCOUNT_NAME}
+                </CustomTextRegular>
+                {/* tags */}
+                <View className="flex flex-row justify-between">
+                  {/* left view */}
+                  <View>
+                    <CustomTextRegular className="text-xs ">
+                      Last Interaction:{" "}
+                    </CustomTextRegular>
+                    <View className="flex flex-row items-center">
+                      <CustomTextRegular className="text-sm font-black mt-2">
+                        51 days ago
+                      </CustomTextRegular>
+                      <View className="rounded-full w-fit bg-orange px-2 py-1 ml-2 mt-2">
+                        <CustomTextRegular className="text-[10px] font-bold text-white ">
+                          Video call
+                        </CustomTextRegular>
+                      </View>
+                    </View>
+                  </View>
+                  {/* right view */}
+                  <View>
+                    <CustomTextRegular className="text-xs ">
+                      Revenue
+                    </CustomTextRegular>
+                    <CustomTextRegular className="text-sm font-black">
+                      $400,000
+                    </CustomTextRegular>
+                  </View>
+                </View>
+                {/* note */}
+                <CustomTextRegular className="text-xs text-primary-accent-color leading-5 mt-4">
+                  Recently updated with the latest transactional data for
+                  enhanced accuracy in sales tracking and performance analysis
+                  on the 5th March 2024...
+                </CustomTextRegular>
+                {/* goal card */}
+                <TouchableOpacity className="w-full relative flex flex-row items-top  mt-4">
+                  {/* goal icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <GoalIcon color={"#4169E1"} />
+                  </View>
+                  {/* goal title and text */}
+                  <View className="w-[75%] ml-4">
+                    <CustomTextRegular>Goal</CustomTextRegular>
+                    <CustomTextRegular className="text-xs text-primary-accent-color">
+                      Increase revenue generated, 13 interaction with clients,
+                      Upgrade account.
+                    </CustomTextRegular>
+                  </View>
+                  {/* angle right icon */}
+                  <TouchableOpacity className="absolute right-0 top-0">
+                    <AngleRightIcon />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+                {/* todo list card */}
+                <TouchableOpacity className="w-full relative flex flex-row items-top  mt-4">
+                  {/* goal icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <TodoListIcon color={"#4169E1"} />
+                  </View>
+                  {/* goal title and text */}
+                  <View className="w-[75%] ml-4">
+                    <CustomTextRegular>To do list</CustomTextRegular>
+                    <CustomTextRegular className="text-xs text-primary-accent-color">
+                      Increase revenue generated, 13 interaction with clients,
+                      Upgrade account.
+                    </CustomTextRegular>
+                  </View>
+                  {/* angle right icon */}
+                  <TouchableOpacity className="absolute right-0 top-0">
+                    <AngleRightIcon />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+              {/* buttons */}
+              <View className="flex flex-row items-center justify-between">
+                {/* take an action button */}
+                <TouchableOpacity
+                  className={`w-[80%] bg-primary-color rounded-full mt-4 h-12 py-3 flx justify-center items-center mb-10  `}
+                  disabled={false}
+                  onPress={handleToggleTakeActionModal}
+                >
+                  <CustomTextRegular className="text-center font-semibold text-white text-base">
+                    {loadingUploadExcelFile ? (
+                      <ActivityIndicator size="small" color={"#fff"} />
+                    ) : (
+                      "Take an action"
+                    )}
+                  </CustomTextRegular>
+                </TouchableOpacity>
+                {/* contact button */}
+                <TouchableOpacity
+                  className={`w-12 h-12 bg-primary-color rounded-full mt-4 py-3 flx justify-center items-center mb-10  `}
+                  disabled={false}
+                  onPress={handleToggleContactModal}
+                >
+                  <ContactIcon />
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
+
+      {/******************** take action *************************/}
+      {showTakeActionModal && (
+        <Modal
+          transparent={true}
+          visible={showTakeActionModal}
+          animationType="none"
+        >
+          <View
+            // style={{ marginTop: StatusBarHeight }}
+            className="h-full w-full bg-black/50 "
+          >
+            <Pressable
+              className="h-[60%] "
+              onPress={handleToggleTakeActionModal}
+            />
+
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: "space-between",
+              }}
+              className="px-5  w-full h-[45%] flex flex-col  rounded-t-3xl  bg-screen-bg"
+            >
+              <View className="py-6 ">
+                {/* note card */}
+                <TouchableOpacity className="w-full relative flex flex-row items-top  mt-6">
+                  {/* note icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <EditTodoIcon color={"#4169E1"} />
+                  </View>
+                  {/* note title and text */}
+                  <View className="w-[75%] ml-4">
+                    <CustomTextRegular>Edit notes</CustomTextRegular>
+                    <CustomTextRegular className="text-xs text-primary-accent-color">
+                      Update details quickly and easily.
+                    </CustomTextRegular>
+                  </View>
+                  {/* angle right icon */}
+                  <TouchableOpacity className="absolute right-0 top-0">
+                    <AngleRightIcon />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+                {/* goal card */}
+                <TouchableOpacity className="w-full relative flex flex-row items-top  mt-6">
+                  {/* goal icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <GoalIcon color={"#4169E1"} />
+                  </View>
+                  {/* goal title and text */}
+                  <View className="w-[75%] ml-4">
+                    <CustomTextRegular>Set goals</CustomTextRegular>
+                    <CustomTextRegular className="text-xs text-primary-accent-color">
+                      Set goals to stay focused and drive performance.
+                    </CustomTextRegular>
+                  </View>
+                  {/* angle right icon */}
+                  <TouchableOpacity className="absolute right-0 top-0">
+                    <AngleRightIcon />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+                {/* todo list card */}
+                <TouchableOpacity className="w-full relative flex flex-row items-top  mt-6">
+                  {/* todo icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <TodoListIcon color={"#4169E1"} />
+                  </View>
+                  {/* todo title and text */}
+                  <View className="w-[75%] ml-4">
+                    <CustomTextRegular>Add to do list</CustomTextRegular>
+                    <CustomTextRegular className="text-xs text-primary-accent-color">
+                      Track and prioritize activities effectively
+                    </CustomTextRegular>
+                  </View>
+                  {/* angle right icon */}
+                  <TouchableOpacity className="absolute right-0 top-0">
+                    <AngleRightIcon />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
+
+      {/******************** contact modal *************************/}
+      {showContactModal && (
+        <Modal
+          transparent={true}
+          visible={showContactModal}
+          animationType="none"
+        >
+          <View
+            // style={{ marginTop: StatusBarHeight }}
+            className="h-full w-full bg-black/50 "
+          >
+            <Pressable
+              className="h-[50%] "
+              onPress={handleToggleContactModal}
+            />
+
+            <ScrollView
+              contentContainerStyle={{
+                flexGrow: 1,
+                justifyContent: "space-between",
+              }}
+              className="px-5  w-full h-[55%] flex flex-col  rounded-t-3xl  bg-screen-bg"
+            >
+              <View className="py-6 ">
+                <CustomTextRegular className="font-black leading-6 text-base text-black mb-6">
+                  {"Contact Information"}
+                </CustomTextRegular>
+
+                {/* list of contact details  */}
+
+                <View className="w-full  flex flex-row items-center  mt-4">
+                  {/*  icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <UserIcon color={"#4169E1"} />
+                  </View>
+                  <CustomTextRegular className="text-xs text-primary-accent-color ml-4">
+                    {currentItem.ACCOUNT_NAME}
+                  </CustomTextRegular>
+                </View>
+                <View className="w-full  flex flex-row items-center  mt-4">
+                  {/*  icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <EmailIcon color={"#4169E1"} />
+                  </View>
+                  <CustomTextRegular className="text-xs text-primary-accent-color ml-4">
+                    {"baylor@irving.com Scott@irving.com"}
+                  </CustomTextRegular>
+                </View>
+                <View className="w-full  flex flex-row items-center  mt-4">
+                  {/*  icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <DobIcon color={"#4169E1"} />
+                  </View>
+                  <CustomTextRegular className="text-xs text-primary-accent-color ml-4">
+                    {"20 December 2001"}
+                  </CustomTextRegular>
+                </View>
+                <View className="w-full  flex flex-row items-center  mt-4">
+                  {/*  icon */}
+                  <View className="w-11 h-11 rounded-full bg-[#ECF0FC] flex items-center justify-center">
+                    <PhoneBookIcon color={"#4169E1"} />
+                  </View>
+                  <CustomTextRegular className="text-xs text-primary-accent-color ml-4">
+                    {"Baylor- +16212233242"}
+                  </CustomTextRegular>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
+      )}
+
       {(uploadingFile || loadingExcelData) && (
         <LottieLoadingScreen loading={uploadingFile || loadingExcelData} />
       )}
