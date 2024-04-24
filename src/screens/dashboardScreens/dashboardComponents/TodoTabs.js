@@ -2,8 +2,18 @@ import { Pressable, View } from "react-native";
 import { toggleData } from "../../../utils/dummyData";
 import CustomTextRegular from "../../../components/CustomTextRegular";
 import PendingTodoComponent from "../../../components/PendingTodoComponent";
+import { useState } from "react";
+import CompletedTodoComponent from "../../../components/CompletedTodoComponent";
 
-const TodoTabs = ({ pendingTodoData, filterPriority, loadingTodos }) => {
+const TodoTabs = ({
+  pendingTodoData,
+  completedTodoData,
+  filterPriority,
+  loadingTodos,
+  toggleSearchModal,
+  handleToggleSearchModal,
+  refetch,
+}) => {
   const [active, setActive] = useState(0);
 
   const handleToggleActive = (index) => {

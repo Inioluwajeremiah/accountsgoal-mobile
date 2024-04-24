@@ -21,7 +21,7 @@
       "bundleIdentifier": "com.inioluwajeremiah.accountsgoalapp"
     },
     "android": {
-      "congig": {
+      "config": {
         "googleMaps": {
           "apiKey": "AIzaSyBx5KGKK1oPjtvLbiumwQ8DS-a9GpSVLWI"
         }

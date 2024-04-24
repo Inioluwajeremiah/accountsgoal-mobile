@@ -288,7 +288,7 @@ const GoalsCard = ({ item, index, refetch }) => {
       >
         <Pressable
           key={index}
-          className={`w-full relative bg-white  rounded-lg p-3 mb-4`}
+          className={`w-full relative bg-white  py-3 px-4 mb-4 border border-[#A8A8A8] rounded-3xl`}
           onPress={handleToggleModal}
         >
           <CustomTextRegular className="text-base font-bold text-left">
@@ -308,7 +308,7 @@ const GoalsCard = ({ item, index, refetch }) => {
             </CustomTextRegular>
           </View>
           {/* <Progress.Bar progress={0.3} width={200} /> */}
-          <View className="absolute flex justify-center items-center right-7 bottom-0 top-0 ">
+          <View className="absolute flex justify-center items-center right-4 bottom-0 top-0 ">
             <Progress.Circle
               size={50}
               progress={progressValue}

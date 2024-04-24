@@ -208,6 +208,7 @@ const TodoScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </View>
+
       {/* todo tabs */}
       <TodoTabs
         pendingTodoData={pendingTodoData}
@@ -215,6 +216,7 @@ const TodoScreen = ({ navigation }) => {
         loadingTodos={loadingTodos}
         toggleSearchModal={toggleSearchModal}
         handleToggleSearchModal={handleToggleSearchModal}
+        completedTodoData={completedTodoData}
         refetch={refetch}
       />
 

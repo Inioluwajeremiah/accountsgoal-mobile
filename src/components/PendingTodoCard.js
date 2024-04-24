@@ -290,7 +290,7 @@ const PendingTodoCard = ({ item, refetch }) => {
         <Modal transparent visible={toggleModal} animationType="slide">
           <View className="h-full w-full bg-transparent">
             <Pressable
-              className="h-[60%] bg-black/50"
+              className="h-[45%] bg-black/50"
               onPress={handleToggleModal}
             />
           </View>
@@ -299,7 +299,7 @@ const PendingTodoCard = ({ item, refetch }) => {
               flexGrow: 1,
               justifyContent: "space-between",
             }}
-            className="absolute bottom-0 w-full h-[45%] flex flex-col  rounded-t-3xl  bg-screen-bg px-5"
+            className="absolute bottom-0 w-full h-[60%] flex flex-col  rounded-t-3xl  bg-screen-bg px-5"
           >
             <View>
               {/* close button */}

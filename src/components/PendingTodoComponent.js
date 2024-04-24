@@ -43,7 +43,7 @@ const PendingTodoComponent = ({
   return (
     <>
       {loading ? (
-        <View className="flex-1 w-full flex justify-center items-center">
+        <View className="flex-1 w-full h-full flex justify-center items-center">
           <ActivityIndicator size="small" color="#4169E1" />
         </View>
       ) : (
