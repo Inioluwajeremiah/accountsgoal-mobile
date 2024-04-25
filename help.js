@@ -13,6 +13,7 @@ Accountsgoal12@
 
 // npx expo install --check
 //  eas build --profile preview --platform android
+//  "react-native-reanimated": "~3.6.2",
 
 <Drawer.Navigator
   style={{ flex: 1 }}

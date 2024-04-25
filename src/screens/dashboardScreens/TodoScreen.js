@@ -42,6 +42,7 @@ const TodoScreen = ({ navigation }) => {
   const [toggleModal, setToggleModal] = useState(false);
   const [togglePriority, setTogglePriority] = useState(false);
   const [toggleReminder, setToggleReminder] = useState(false);
+  const [toggleNoEndDate, setToggleNoEndDate] = useState(false);
   const [toggleSearchModal, setToggleSearchModal] = useState(false);
   const [toggleFilter, setToggleFilter] = useState(false);
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -100,6 +101,9 @@ const TodoScreen = ({ navigation }) => {
   const handleToggleReminder = () => {
     setToggleReminder((previousState) => !previousState);
   };
+  const handleToggleNoEndDate = () => {
+    setToggleNoEndDate((previousState) => !previousState);
+  };
   const handleDateTimePicker = (event, selectedDate) => {
     if (dateTimePickerMode === "date") {
       const currentDate = selectedDate || date;
@@ -129,6 +133,7 @@ const TodoScreen = ({ navigation }) => {
       eventName: eventName,
       date: date.toString(),
       setPirority: priority,
+      noEndDate: toggleNoEndDate,
       startTime: startTime.toString(),
       endTime: endTime.toString(),
       setReminder: { active: toggleReminder, note: note },
@@ -273,9 +278,49 @@ const TodoScreen = ({ navigation }) => {
                 </CustomTextRegular>
               </Pressable>
 
+              {/* no end date */}
+              <View className="mt-10 items-center flex-row justify-between  ">
+                <CustomTextRegular>No end date for task</CustomTextRegular>
+                <Switch
+                  trackColor={{
+                    false: "#C5C5C5",
+                    true: "#4169E1",
+                  }}
+                  thumbColor={toggleReminder ? "#fff" : "#fff"}
+                  ios_backgroundColor="#3e3e3e"
+                  onValueChange={handleToggleNoEndDate}
+                  value={toggleNoEndDate}
+                />
+              </View>
+
               {/* priority */}
               <LabelComponent label={"Set Priority"} required={true} />
-              <Pressable
+
+              <View className="w-full flex flex-row  mt-4  gap-x-[3%] ">
+                {priorityData.slice(1, 4).map((item, index) => (
+                  <Pressable
+                    onPress={() => handleSelectPriority(item.title)}
+                    className={`w-[30%] flex items-center justify-center rounded-lg ${
+                      index === 0
+                        ? "bg-high-priority"
+                        : index === 1
+                          ? "bg-medium-priority"
+                          : "bg-low-priority"
+                    }  ${priority === item.title ? "border border-black" : ""}`}
+                    key={index}
+                  >
+                    <CustomTextRegular
+                      className={` text-white text-xs text-center py-1 px-2 ${
+                        priority === item.title ? "" : ""
+                      }`}
+                    >
+                      {item.title}
+                    </CustomTextRegular>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* <Pressable
                 className={customButtonWithIcon + " justify-between"}
                 onPress={handleTogglePriority}
               >
@@ -285,7 +330,7 @@ const TodoScreen = ({ navigation }) => {
                 <IconCaretDropdown />
               </Pressable>
               {/* priority drop down */}
-              {togglePriority && (
+              {/* {togglePriority && (
                 <View className="w-full bg-white rounded-lg my-2 p-3 ">
                   {priorityData.map((item, index) => (
                     <Pressable
@@ -309,7 +354,7 @@ const TodoScreen = ({ navigation }) => {
                     </Pressable>
                   ))}
                 </View>
-              )}
+              )} */}
 
               {/* start and end time */}
               <View className="flex flex-row items-center justify-between">
@@ -354,7 +399,7 @@ const TodoScreen = ({ navigation }) => {
                 <CustomTextRegular>Set Reminder</CustomTextRegular>
                 <Switch
                   trackColor={{
-                    false: "rgba(103, 135, 231, 1)",
+                    false: "#C5C5C5",
                     true: "#4169E1",
                   }}
                   thumbColor={toggleReminder ? "#fff" : "#fff"}
