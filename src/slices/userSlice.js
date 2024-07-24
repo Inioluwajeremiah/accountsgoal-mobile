@@ -5,6 +5,7 @@ const initialState = {
   accountsGoalOrganisation: null,
   onboarding: false,
   userId: "",
+  organisationId: "",
   importFile: false,
 };
 
@@ -18,6 +19,9 @@ const acgUserSlice = createSlice({
     setUserId: (state, action) => {
       state.userId = action.payload;
     },
+    setOrganizationId: (state, action) => {
+      state.organisationId = action.payload;
+    },
     setAcgUserOnboarding: (state, action) => {
       state.onboarding = action.payload;
     },
@@ -30,6 +34,8 @@ const acgUserSlice = createSlice({
     clearAcgUserData: (state, action) => {
       state.accountsGoalUser = null;
       state.accountsGoalOrganisation = null;
+      state.userId = "";
+      state.organisationId = "";
     },
   },
 });
@@ -38,6 +44,7 @@ export const {
   setAcgUserData,
   setAcgOrganisationData,
   setUserId,
+  setOrganizationId,
   setAcgUserOnboarding,
   setImportFile,
   clearAcgUserData,

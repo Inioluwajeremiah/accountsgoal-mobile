@@ -9,25 +9,30 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import accountgoal from "../../../assets/accounts.png";
 import { useLoginMutation } from "../../slices/usersApiSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { setAcgUserData } from "../../slices/userSlice";
+import { clearAcgUserData, setAcgUserData } from "../../slices/userSlice";
 import TickIcon from "../../Icons/TickIcon";
 import PasswordFIeld from "../../components/PasswordField";
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const [login, { isLoading, error: loginError }] = useLoginMutation();
   const { accountsGoalUser } = useSelector((state) => state.acgUser);
-  console.log("accountsGoalUser login ===> ", accountsGoalUser);
+
+  const organizationId = route?.params?.organizationId;
+  const userId = route?.params?.userId;
+
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberme, setRememberme] = useState(false);
+
+  const isDisabled = !email || !password;
 
   const handleRemeberMe = () => {
     setRememberme(!rememberme);
@@ -37,43 +42,39 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      console.log("email and password", email + " <====> " + password);
       const loginBody = { email: email, password: password };
-      const response = await login(loginBody).unwrap();
-      if (response.error) {
-        console.log(" response ===>", response);
-        // Alert.alert(
-        //   "",
-        //   response.error?.message ||
-        //     response.error?.data.msg ||
-        //     response.error?.msg ||
-        //     response.error?.error ||
-        //     loginError.error.split(":")[1]
-        // );
+      const response = await login(loginBody);
 
-        console.log("login error i ==> ", loginError);
-        // Alert.alert("", error);
-        // return;
-        // davidson@accountsgoal.com
-        // Accountsgoal12@@
+      if (response?.error) {
+        Alert.alert("", response.error?.data?.msg || "Error logging in");
       }
 
-      console.log("login response ===>", response);
       if (response?.data?._id) {
-        dispatch(setAcgUserData({ ...response.data, login: true }));
-        navigation.navigate("Home");
-      }
-      if (response?.token) {
-        dispatch(setAcgUserData({ ...response, login: true }));
-        navigation.navigate("Home");
+        dispatch(setAcgUserData({ ...response?.data, login: true }));
+        if (organizationId && userId) {
+          dispatch(
+            setAcgUserData({
+              _id: userId,
+              organizationId: organizationId,
+              invitedUserId: response?.data?._id,
+              access: response?.data?.access,
+              email: response?.data?.email,
+              fullName: response?.data?.fullName,
+              mobile: response?.data?.mobile,
+              profileImage: response?.data?.profileImage,
+              token: response?.data?.token,
+              login: true,
+            })
+          );
+        }
+        navigation.navigate("Home", { organizationId, userId });
       }
     } catch (error) {
-      console.log("login error c ===> ", error);
-      Alert.alert("", error.data.msg);
+      Alert.alert("", error?.data?.msg);
     }
   };
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 ">
       <KeyboardAvoidingView>
         <ScrollView
           className="px-4 h-full"
@@ -124,9 +125,10 @@ const LoginScreen = ({ navigation }) => {
             {/* forget password */}
             <TouchableOpacity
               onPress={() => navigation.navigate("forgotPassword")}
+              className="py-2"
             >
               <CustomTextRegular className="text-sm text-primary-accent-color">
-                Forget Password?
+                Forgot Password?
               </CustomTextRegular>
             </TouchableOpacity>
           </View>
@@ -135,20 +137,22 @@ const LoginScreen = ({ navigation }) => {
             text="Login"
             textColor={"#fff"}
             bgColor={"#4169E1"}
-            isDisabled={false}
-            disabled={false}
+            isDisabled={isDisabled}
+            disabled={isDisabled}
             marginTop={60}
             on_press={handleLogin}
           />
 
           {/* dont have an account */}
-          <View className="absolute bottom-10 flex flex-row items-center justify-center self-center mt-8">
+          <View className="flex flex-row items-center justify-center self-center mt-20">
             <CustomTextRegular className="text-sm text-primary-accent-color">
-              Dont have an account
+              Don't have an account?
             </CustomTextRegular>
-            <TouchableOpacity onPress={() => navigation.navigate("signup")}>
-              <CustomTextRegular className="text-primary-color text-base font-semibold">
-                {" "}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("signup")}
+              className="py-2 ml-4"
+            >
+              <CustomTextRegular className="text-primary-color text-base font-semibold ">
                 Sign up
               </CustomTextRegular>
             </TouchableOpacity>

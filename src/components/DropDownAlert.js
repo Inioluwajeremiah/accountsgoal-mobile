@@ -16,10 +16,10 @@ const DropDownAlert = ({ showAlertModal, message, type, ToggleAlertModal }) => {
             type === "success"
               ? "bg-[#6CBE44]"
               : type === "warn"
-              ? "bg-orange-500"
-              : type === "danger"
-              ? "bg-red-500"
-              : ""
+                ? "bg-orange-500"
+                : type === "danger"
+                  ? "bg-red-500"
+                  : ""
           } h-[10%] flex items-center justify-center`}
         >
           <CustomTextRegular className="text-white text-base font-semibold text-center">

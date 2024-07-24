@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Accounts Goal",
+    "slug": "accountsgoal",
+    "scheme": "accountsgoal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyBx5KGKK1oPjtvLbiumwQ8DS-a9GpSVLWI"
+      },
+      "supportsTablet": true,
+      "bundleIdentifier": "com.inioluwajeremiah.accountsgoalapp"
+    },
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBx5KGKK1oPjtvLbiumwQ8DS-a9GpSVLWI"
+        }
+      },
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive_icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "splash": {
+        "image": "./assets/splash1.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4169E1"
+      },
+      "package": "com.accountsgoal.accountsgoalapp",
+      "versionCode": 4,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+        }
+      ]
+    ],
+
+    "extra": {
+      "eas": {
+        "projectId": "fb348bb4-dc29-4199-9d31-d6312903f790"
+      }
+    },
+    "owner": "accountsgoal"
+  }
+}

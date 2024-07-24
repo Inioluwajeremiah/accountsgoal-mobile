@@ -24,31 +24,36 @@ import {
 } from "../../slices/usersApiSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserId } from "../../slices/userSlice";
+import BackIcon from "../../Icons/BackIcon";
+import * as Clipboard from "expo-clipboard";
 
 const VerifyPasswordResetScreen = ({ navigation, route }) => {
-  const { userId } = useSelector((state) => state.acgUser);
   const dispatch = useDispatch();
 
-  console.log("userId ===> ", userId);
   const [verify, { isLoading }] = useVerifyMutation();
-  const [register, { isLoading: loadingResend }] = useRegisterMutation();
-  const [resendOtp, { isLoading: loadingOtp, error: otpError }] =
+  const [resendOtp, { isLoading: loadingResendOtp, error: otpError }] =
     useResendOtpMutation();
-
-  const fromParam = route.params;
-
-  console.log("fromParam  ===> ", fromParam);
-
-  const boxSize = windowWidth / 6.5;
-  const boxArray = [...Array(4).keys()];
-  const pRefs = Array.from({ length: boxArray.length }, () => createRef());
-
+  const [otpInput, setOtpInput] = useState([]);
+  const [isAltered, setIsAltered] = useState(false);
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
   const [p3, setP3] = useState("");
   const [p4, setP4] = useState("");
-
   const [countDown, setCountDown] = useState(60);
+
+  const fromParam = route.params;
+  const boxSize = windowWidth / 6.5;
+  const boxArray = [...Array(4).keys()];
+  const pRefs = Array.from({ length: boxArray.length }, () => createRef());
+
+  const otpReducer = otpInput.reduce((accumulator, item) => {
+    if (item.code === "") {
+      return accumulator + 1;
+    }
+    return accumulator;
+  }, 0);
+
+  const otp = `${p1}${p2}${p3}${p4}`;
 
   useEffect(() => {
     const x = setInterval(() => {
@@ -59,89 +64,117 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
     return () => clearInterval(x);
   }, [countDown]);
 
-  const handleVerify = async () => {
-    const otp = `${p1}${p2}${p3}${p4}`;
-    console.log(otp);
-    try {
-      const res = await verify({
-        userId: userId,
-        otp: otp,
-      });
-      // dispatch(setCredentials({ ...res }));
-      if (res.error) {
-        console.log("signup response ===>", res);
-        Alert.alert(
-          "",
-          res.error?.message || res.error.data?.msg || res.error?.msg
-        );
-        return;
-      }
-      console.log("verify user ==>", res);
-      Alert.alert("", res.data?.message);
-      setTimeout(() => {
-        navigation.navigate("passwordReset");
-      }, 1000);
-    } catch (error) {
-      console.log(error);
-      Alert.alert("", error?.data?.error || error.error || error?.data?.msg);
+  const handlePasteOtpCode = async () => {
+    const copiedCodes = await Clipboard.getStringAsync();
+    const otpcodes = copiedCodes.split("");
+    if (otpcodes.length === 4 && otpInput.length === 0) {
+      setOtpInput(
+        otpcodes.map((item, index) => {
+          return { status: false, code: otpcodes[index] };
+        })
+      );
+      otpInput.map(
+        (item, index) => (pRefs[index].current.value = otpcodes[index])
+      );
     }
+    // return;
   };
-
   const handleCodes = [
     (e) => {
       const type = typeof e;
       setP1(e);
-      if (e.length === 1 && e !== " ") {
+      if (e.length === 1 && e !== "") {
         pRefs[1].current.focus();
       }
     },
 
     (e) => {
       setP2(e);
-      if (e.length === 1 && e !== " ") {
+      if (e.length === 1 && e !== "") {
         pRefs[2].current.focus();
       }
     },
 
     (e) => {
       setP3(e);
-      if (e.length === 1 && e !== " ") {
+      if (e.length === 1 && e !== "") {
         pRefs[3].current.focus();
       }
     },
 
     (e) => {
       setP4(e);
-      if (e.length === 1 && e !== " ") {
-        // handleNext();
+      if (e.length === 1 && e !== "") {
       }
     },
   ];
 
-  const handleResendCode = async () => {
-    try {
-      const res = await resendOtp(fromParam);
-      console.log("sign up response ===>> ", res);
-      if (res.data) {
-        dispatch(setUserId(res.data.userId));
+  const handleKeyPress = (nativeEvent, index) => {
+    // if (nativeEvent.key === "Backspace" && !pRefs[index]) {
+    if (nativeEvent.key === "Backspace") {
+      if (index > 0) {
+        pRefs[index - 1].current.focus();
       }
+      // Alert.alert("", "back space");
+    }
+  };
+
+  const handleVerify = async () => {
+    const otp = `${p1}${p2}${p3}${p4}`;
+
+    try {
+      const res = await verify({
+        userId: fromParam.userId,
+        otp: otp,
+      });
+
+      console.log("handleVerify response ===> ", res);
+
       if (res.error) {
-        console.log("signup response error ===>", res);
         Alert.alert(
           "",
-          res.error?.message ||
-            res.error.data?.msg ||
-            res.error?.msg ||
-            res.error?.error
+          res.error?.message || res.error.data?.msg || res.error?.data?.error
         );
         return;
       }
-
-      Alert.alert("", "Sign up succesfully!");
-
-      navigation.navigate("verify", res);
+      Alert.alert("", res.data?.message);
+      setTimeout(() => {
+        navigation.navigate("passwordReset", {
+          userId: res?.data?._id,
+          otp: otp,
+          email: res?.data?.email,
+        });
+      }, 1000);
     } catch (error) {
-      console.log("signup error ===>", error);
+      Alert.alert("", error?.data?.error || error.error || error?.data?.msg);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setCountDown(0);
+    const resendBody = {
+      ...fromParam,
+    };
+    try {
+      const res = await resendOtp({
+        ...fromParam,
+      });
+
+      console.log("resendOtp response ==> ", res);
+      if (res?.data) {
+        Alert.alert("", res.data?.message);
+        // dispatch(setUserId(res.data?.accountsGoalUser?._id));
+        setCountDown(60);
+      }
+      if (res.error) {
+        Alert.alert(
+          "",
+
+          res.error.data?.msg
+        );
+        return;
+      }
+    } catch (error) {
       Alert.alert("", error?.message || error.data.msg);
     }
   };
@@ -149,21 +182,33 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
   return (
     <KeyboardAvoidingView>
       <ScrollView className="px-4" contentContainerStyle={{ flexGrow: 1 }}>
-        <Image
-          source={accountgoal}
-          className=" h-12 w-1/2 object-contain flex self-center mt-8"
-        />
+        {/* header */}
+        <View className="mt-10 flex flex-row items-start">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="absolute"
+          >
+            <BackIcon />
+          </TouchableOpacity>
+          <View className="flex-1 ">
+            <Image
+              source={accountgoal}
+              className=" h-14 w-2/3 ml-3 object-contain flex self-center"
+            />
+          </View>
+        </View>
+
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           Password Reset
         </CustomTextRegular>
         <CustomTextRegular className="text-secondary-accent-color text-center text-sm my-3 leading-6">
-          We’ve sent an otp to the mail you provided us
+          We have sent an OTP to the email address you provided.
         </CustomTextRegular>
 
         {/* code box */}
-        <View
+        <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex flex-row gap-x-6 justify-center items-center my-4"
+          className="flex flex-row gap-x-6 justify-center items-center mt-10  mb-4"
         >
           {boxArray.map((item, index) => (
             <View
@@ -176,14 +221,16 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
                 placeholderTextColor={"#D7D7D7"}
                 className={`h-full w-full p-2 text-center text-black font-black  text-2xl`}
                 keyboardType="number-pad"
-                // keyboardType="email-address"
                 maxLength={1}
                 ref={pRefs[index]}
                 onChangeText={handleCodes[index]}
+                onKeyPress={({ nativeEvent }) =>
+                  handleKeyPress(nativeEvent, index)
+                }
               />
             </View>
           ))}
-        </View>
+        </KeyboardAvoidingView>
 
         <LongButtonUnFixed
           isLoading={isLoading}
@@ -197,7 +244,7 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
         />
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
           <TouchableOpacity onPress={handleResendCode}>
-            {loadingResend ? (
+            {loadingResendOtp ? (
               <ActivityIndicator size={"small"} color={"#4169E1"} />
             ) : (
               <CustomTextRegular className="text-sm text-primary-accent-color">
@@ -208,7 +255,7 @@ const VerifyPasswordResetScreen = ({ navigation, route }) => {
           <Pressable>
             <CustomTextRegular className="text-bold text-base font-semibold">
               {" "}
-              {formatTime(countDown)}
+              {countDown > 0 ? countDown : ""}
             </CustomTextRegular>
           </Pressable>
         </View>

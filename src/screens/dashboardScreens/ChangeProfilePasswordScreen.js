@@ -4,6 +4,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from "react-native";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import BackIcon from "../../Icons/BackIcon";
@@ -14,6 +15,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useUpdatePasswordMutation } from "../../slices/usersApiSlice";
 import LottieLoadingScreen from "../../components/LottieLoadingScreen";
 import { isValidPassword as vpwd } from "../../utils/validPassword";
+import PasswordFIeld from "../../components/PasswordField";
+import { status_bar_height } from "../../utils/Dimensions";
+
 const ChangeProfilePasswordScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { accountsGoalUser } = useSelector((state) => state.acgUser);
@@ -91,26 +95,15 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
         oldPassword: password,
         password: confirmNewPassword,
       };
-      console.log("update pwd body ===> ", body);
       const res = await updatePassword(body);
-      console.log("update pwd response ===>> ", res);
       if (res?.data) {
         setShowAlertModal(true);
       }
       if (res?.error) {
-        console.log(" error ===>", res);
-        // Alert.alert(
-        //   "",
-        //   res.error?.message ||
-        //     res.error.data?.msg ||
-        //     res.error?.msg ||
-        //     res.error?.error
-        // );
-        return;
+        Alert.alert("", res?.error?.data?.msg);
       }
     } catch (error) {
-      console.log("signup error ===>", error);
-      // Alert.alert("", error?.message || error.data.msg);
+      Alert.alert("", error?.message);
     }
   };
 
@@ -118,16 +111,20 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
     if (showAlertModal === true) {
       setTimeout(() => {
         setShowAlertModal(false);
+        navigation.goBack();
       }, 3000);
     }
   });
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ marginTop: Platform.OS === "ios" ? 0 : status_bar_height }}
+    >
       <ScrollView className="px-5" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1">
           {/* header */}
-          <View className="mt-5 flex flex-row items-center mb-10">
+          <View className="mt-4 flex flex-row items-center mb-10">
             <TouchableOpacity onPress={() => navigation.goBack()}>
               <BackIcon />
             </TouchableOpacity>
@@ -135,12 +132,40 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
               Password Change
             </CustomTextRegular>
           </View>
-          <CustomTextInput
+
+          <PasswordFIeld
+            showVisibility={true}
+            labelColor={"#D7D7D7"}
+            placeholder="********"
+            label={"Old Password"}
+            required={true}
+            isValid={isValidPassword}
+            onChangeText={(e) => handlePassword(e)}
+          />
+          <PasswordFIeld
+            showVisibility={true}
+            labelColor={"#D7D7D7"}
+            placeholder="********"
+            label={"New Password"}
+            required={true}
+            isValid={isValidNewPassword}
+            onChangeText={(e) => handleNewPassword(e)}
+          />
+          <PasswordFIeld
+            showVisibility={true}
+            labelColor={"#D7D7D7"}
+            placeholder="********"
+            label={"Password"}
+            required={true}
+            isValid={isValidCPassword}
+            onChangeText={(e) => handleConfrmNewPassword(e)}
+          />
+          {/* <CustomTextInput
             // value={password}
             secureTextEntry={true}
             labelColor={"#D7D7D7"}
             placeholder="********"
-            label={"Password"}
+            label={"Old Password"}
             required={true}
             isValid={isValidPassword}
             onChangeText={(e) => handlePassword(e)}
@@ -150,7 +175,7 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
             secureTextEntry={true}
             labelColor={"#D7D7D7"}
             placeholder="********"
-            label={"New Password"}
+            label={"Confirm New Password"}
             required={true}
             isValid={isValidNewPassword}
             onChangeText={(e) => handleNewPassword(e)}
@@ -164,7 +189,7 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
             required={true}
             isValid={isValidCPassword}
             onChangeText={(e) => handleConfrmNewPassword(e)}
-          />
+          /> */}
         </View>
         {/* change password button */}
         <View className="pb-10">
@@ -190,13 +215,13 @@ const ChangeProfilePasswordScreen = ({ navigation }) => {
         )}
       </ScrollView>
       {loadingUpdate && <LottieLoadingScreen loading={loadingUpdate} />}
-      {updateError &&
+      {/* {updateError &&
         Alert.alert(
           "",
           updateError?.error ||
             updateError?.error?.data?.msg ||
             updateError?.data?.msg
-        )}
+        )} */}
     </SafeAreaView>
   );
 };

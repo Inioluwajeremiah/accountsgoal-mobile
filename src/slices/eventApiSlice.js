@@ -17,7 +17,7 @@ export const eventApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response) => {
         // Sort the response data in descending order
-        console.log("response transform ==>", response);
+        // console.log("response transform ==>", response);
         return response.events.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );

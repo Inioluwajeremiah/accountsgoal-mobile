@@ -1,17 +1,14 @@
-import { View, Text, SafeAreaView, Image } from "react-native";
+import { SafeAreaView } from "react-native";
 import React, { useEffect } from "react";
-import CustomTextRegular from "../components/CustomTextRegular";
-import SplashIcon from "../../assets/SplashIcon";
 import { useSelector } from "react-redux";
 import { StatusBar } from "expo-status-bar";
-import { ScrollView } from "react-native-gesture-handler";
+import SplashIcon from "../Icons/SplashIcon";
+import { useNavigation } from "@react-navigation/native";
 
 const SplashScreen = ({ navigation, route }) => {
   const { accountsGoalUser, onboarding } = useSelector(
     (state) => state.acgUser
   );
-  // const { onboarding } = useSelector((state) => state.acgUser);
-  console.log("user data at splashscreen =>>>> ", accountsGoalUser);
   useEffect(() => {
     const navigateToScreen = async () => {
       try {
@@ -20,51 +17,27 @@ const SplashScreen = ({ navigation, route }) => {
           routes: [
             {
               name: `${
-                accountsGoalUser?.login &&
-                accountsGoalUser?.role === "footballer" &&
-                accountsGoalUser?.isCompleteOnboarding === true
-                  ? "footballerStackScreen"
-                  : accountsGoalUser?.login &&
-                      accountsGoalUser?.role === "footballer" &&
-                      !accountsGoalUser?.isCompleteOnboarding
-                    ? "footballer_onboarding_first"
-                    : accountsGoalUser?.login &&
-                        accountsGoalUser?.role === "admin"
-                      ? "adminStackScreen"
-                      : accountsGoalUser?.login &&
-                          accountsGoalUser?.role === "scout" &&
-                          accountsGoalUser?.isCompleteOnboarding
-                        ? "scoutStackScreen"
-                        : accountsGoalUser?.login &&
-                            accountsGoalUser?.role === "scout" &&
-                            !accountsGoalUser?.isCompleteOnboarding
-                          ? "scout_onboarding_first"
-                          : "authStackScreen"
-              }`,
-              name: `${
                 onboarding && accountsGoalUser?.login
                   ? "Home"
                   : onboarding && !accountsGoalUser?.login
                     ? "login"
-                    : "onboard1"
+                    : "onboard"
               }`,
-              // name: `${"verify"}`,
+              // name: `${"notes"}`,
             },
           ],
         });
       } catch (error) {
-        console.error("Error retrieving userData from AsyncStorage:", error);
-        // Handle error, e.g., show a login screen
         navigation.reset({
           index: 0,
-          routes: [{ name: "authStackScreen" }],
+          routes: [{ name: "login" }],
         });
       }
     };
 
     const timer = setTimeout(() => {
       navigateToScreen();
-    }, 500); // delay navigation for 5 seconds
+    }, 1500);
 
     return () => clearTimeout(timer); // clear timeout on unmount
   }, [navigation]);

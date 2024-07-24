@@ -16,8 +16,11 @@ import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import { useResetPasswordMutation } from "../../slices/usersApiSlice";
 import accountgoal from "../../../assets/accounts.png";
+import BackIcon from "../../Icons/BackIcon";
+import PasswordFIeld from "../../components/PasswordField";
 
-const PasswordResetScreen = ({ navigation }) => {
+const PasswordResetScreen = ({ navigation, route }) => {
+  const { userId, otp, email } = route.params;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -45,26 +48,27 @@ const PasswordResetScreen = ({ navigation }) => {
   };
 
   const handleResetPassword = async () => {
-    // navigation.navigate("verify");
     try {
       const res = await resetPassword({
-        password,
-        confirmPassword,
+        userId: userId,
+        password: password,
+        confirmPassword: confirmPassword,
+        otp: otp,
       });
+
+      console.log("resetPassword response ==> ", res);
       if (res.error) {
-        console.log("password reset ===>", res);
-        Alert.alert("", res.error?.message || res.error.error);
+        Alert.alert("", res.error?.data?.msg);
         return;
       }
 
       if (res.data) {
-        setInterval(() => {
-          Alert.alert("", res.data.message);
+        setTimeout(() => {
+          Alert.alert("", res?.data?.data?.message || res?.data?.message);
           navigation.navigate("passwordAlert");
         }, 1000);
       }
     } catch (error) {
-      console.log("signup error ===>", error);
       Alert.alert("", error?.message || error.error.error);
     }
   };
@@ -75,19 +79,28 @@ const PasswordResetScreen = ({ navigation }) => {
       keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-5">
-        <Image
-          source={accountgoal}
-          className=" h-12 w-1/2 object-contain flex self-center mt-8"
-        />
-
+        {/* header */}
+        <View className="mt-10 flex flex-row items-start">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="absolute"
+          >
+            <BackIcon />
+          </TouchableOpacity>
+          <View className="flex-1 ">
+            <Image
+              source={accountgoal}
+              className=" h-14 w-2/3 ml-3 object-contain flex self-center"
+            />
+          </View>
+        </View>
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           Password Reset
         </CustomTextRegular>
         <CustomTextRegular className="text-secondary-accent-color text-center text-sm my-3 leading-6"></CustomTextRegular>
 
-        <CustomTextInput
-          // value={password}
-          secureTextEntry={true}
+        <PasswordFIeld
+          showVisibility={true}
           labelColor={"#D7D7D7"}
           placeholder="********"
           label={"Password"}
@@ -95,9 +108,8 @@ const PasswordResetScreen = ({ navigation }) => {
           isValid={isValidPassword}
           onChangeText={handlePassword}
         />
-        <CustomTextInput
-          // value={confirmPassword}
-          secureTextEntry={true}
+        <PasswordFIeld
+          showVisibility={true}
           labelColor={"#D7D7D7"}
           placeholder="********"
           label={"Confirm Password"}
@@ -105,6 +117,7 @@ const PasswordResetScreen = ({ navigation }) => {
           isValid={isValidCPassword}
           onChangeText={handleConfrmPassword}
         />
+
         <LongButtonUnFixed
           isLoading={isLoading}
           text="Reset password"

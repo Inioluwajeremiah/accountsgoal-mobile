@@ -5,11 +5,11 @@ export const todoApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     createTodo: builder.mutation({
       query: (data) => ({
-        url: `${TODO_URL}createTodoList`,
+        url: `${TODO_URL}createTodoList/${data.uniqueId}`,
         method: "POST",
         body: data,
       }),
-      providesTags: ["Todo"],
+      invalidatesTags: ["Todo"],
     }),
     getUserTodos: builder.query({
       query: (userId) => ({
@@ -17,47 +17,62 @@ export const todoApiSlice = apiSlice.injectEndpoints({
       }),
       transformResponse: (response) => {
         // Sort the response data in descending order
-        console.log("response transform ==>", response);
+        // console.log("response transform ==>", response);
         return response.todos.sort(
+          (a, b) => new Date(a.endDate) - new Date(b.endDate)
+        );
+      },
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
+    }),
+    getTodoListById: builder.query({
+      query: ({ uniqueId }) => ({
+        url: `${TODO_URL}getTodoListById/${uniqueId}`,
+      }),
+      transformResponse: (response) => {
+        // Sort the response data in descending order
+        // console.log("response transform ==>", response);
+        return response.data.todoId.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
       },
-
-      // providesTags: ["Todo"],
-      keepUnusedDataFor: 5,
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
     }),
 
     getAllTodo: builder.query({
       query: () => ({
         url: `${TODO_URL}getAllTodoList`,
       }),
-      keepUnusedDataFor: 5,
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
     }),
 
     getTodo: builder.query({
       query: (userId) => ({
         url: `${TODO_URL}getTodoListById/${userId}`,
       }),
-      keepUnusedDataFor: 5,
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
     }),
     editTodo: builder.mutation({
       query: (data) => ({
-        url: `${TODO_URL}editTodoList/${data.id}`,
+        url: `${TODO_URL}editTodoList/${data.uniqueId}/${data.id}`,
         method: "PUT",
         body: data,
       }),
       invalidatesTags: ["Todo"],
     }),
     deleteTodo: builder.mutation({
-      query: ({ id }) => ({
-        url: `${TODO_URL}deleteTodoList/${id}`,
+      query: ({ uniqueId, id }) => ({
+        url: `${TODO_URL}deleteTodoList/${uniqueId}/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Todo"],
     }),
     completeTodo: builder.mutation({
       query: (data) => ({
-        url: `${TODO_URL}completedTodo/${data.id}`,
+        url: `${TODO_URL}completedTodo/${data.uniqueId}/${data.id}`,
         method: "PUT",
         body: data,
       }),
@@ -67,13 +82,15 @@ export const todoApiSlice = apiSlice.injectEndpoints({
       query: ({ keyword }) => ({
         url: `${TODO_URL}getTodoByEventName/${keyword}`,
       }),
-      keepUnusedDataFor: 5,
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
     }),
     filterTodo: builder.query({
       query: ({ keyword }) => ({
         url: `${TODO_URL}getTodoByPirority/${keyword}`,
       }),
-      keepUnusedDataFor: 5,
+      providesTags: ["Todo"],
+      keepUnusedDataFor: 28800,
     }),
   }),
 });
@@ -81,6 +98,7 @@ export const todoApiSlice = apiSlice.injectEndpoints({
 export const {
   useCreateTodoMutation,
   useGetUserTodosQuery,
+  useGetTodoListByIdQuery,
   useGetAllTodoQuery,
   useGetTodoQuery,
   useEditTodoMutation,

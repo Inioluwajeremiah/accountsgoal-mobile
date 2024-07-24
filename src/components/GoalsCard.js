@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Pressable,
@@ -13,6 +13,7 @@ import {
 import {
   useDeleteGoalMutation,
   useEditGoalMutation,
+  useGetColorStatusQuery,
 } from "../slices/goalApiSlice";
 import CustomTextRegular from "./CustomTextRegular";
 import CalendarSmall from "../Icons/CalendarSmall";
@@ -31,14 +32,19 @@ import ProfileIcon from "../Icons/ProfileIcon";
 import CustomTextInputField from "./CustomTextInputField";
 import TickIcon from "../Icons/TickIcon";
 import DropDownAlert from "./DropDownAlert";
-import { useGetAllUsersQuery } from "../slices/usersApiSlice";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import SubgoalsText from "./SubgoalsText";
 import DeleteComponent from "./DeleteComponent";
 import LottieView from "lottie-react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
+import { useSelector } from "react-redux";
+import { useGetExcelDataQuery } from "../slices/accountApiSlice";
+import { BASE_URL } from "../utils/Endpoints";
+import CloseButtonBigIcon from "../Icons/CloseButtonBigIcon";
 
-const GoalsCard = ({ item, index, refetch }) => {
+const GoalsCard = ({ item, index, lastIndex }) => {
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
+
   const [selectedItem, setSelectedItem] = useState([]);
   const [toggleModal, setToggleModal] = useState(false);
   const [editGoalModal, setEditGoalModal] = useState(false);
@@ -46,63 +52,82 @@ const GoalsCard = ({ item, index, refetch }) => {
   const [showDateTimePicker, setShowDateTimePicker] = useState(false);
   const [goalName, setGoalName] = useState(item.goalName);
   const [editGoalName, setEditGoalName] = useState(item.goalName);
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(
+    item?.endDate ? new Date(item?.endDate) : new Date()
+  );
   // const [attachedClients, setAttachedClients] = useState([]);
   const [attachClientInput, setAttaChClientInput] = useState("");
-  const [attachedClients, setAttachedClients] = useState(item.client);
+  const [attachedClients, setAttachedClients] = useState(item?.client);
+  const [attachedClient, setAttachedClient] = useState("");
+  const [attachedClientUniqueId, setAttachedClientUniqueId] = useState(
+    item?.excelRow?.uniqueId
+  );
   const [toggleNewSUbgoals, setToggleNewSubgoals] = useState(false);
   const [subgoalInput, setSubgoalInput] = useState("");
-  const [subgoals, setSubgoals] = useState(item.subGoals);
-  const [selectedSubgoals, setSelectedSubgoals] = useState(item.subGoals);
+  const [subgoals, setSubgoals] = useState(item?.subGoals);
+  const [selectedSubgoals, setSelectedSubgoals] = useState(item?.subGoals);
   const [showAlertModal, setShowAlertModal] = useState(false);
+  const goalSwipeRef = useRef(null);
 
-  console.log("goals item ==> ", item);
-
-  const subGoalsLength = item.subGoals.length;
-  const completedSubgoals = item.subGoals.reduce((accumulator, item) => {
-    if (item.status === true) {
+  const subGoalsLength = item?.subGoals?.length;
+  const completedSubgoals = item?.subGoals.reduce((accumulator, item) => {
+    if (item?.status === true) {
       return accumulator + 1;
     } else {
       return accumulator;
     }
   }, 0);
 
-  const progressValue = completedSubgoals / subGoalsLength;
+  const progressValue =
+    subGoalsLength > 0 ? completedSubgoals / subGoalsLength : 0;
+
+  // const progressValue = 2;
 
   const isValidForm = !goalName || !date || !attachedClients;
 
-  const [editGoal, { isLoading: loadingEditGoal, error: editGoalError }] =
-    useEditGoalMutation();
+  const [
+    editGoal,
+    { isLoading: loadingEditGoal, error: editGoalError, isSuccess },
+  ] = useEditGoalMutation();
 
   const [deleteGoal, { isLoading: loadingDelete, error: deleteError }] =
     useDeleteGoalMutation();
-  // get all users
+
   const {
-    data: allUsers,
-    isLoading: loadingUsers,
-    error: userError,
-  } = useGetAllUsersQuery();
+    data: excelData,
+    isLoading: loadingExcelData,
+    isError: isExceElrror,
+    error: excelDataError,
+    refetch: refetchExcelData,
+  } = useGetExcelDataQuery({
+    userId: accountsGoalUser?._id,
+    token: accountsGoalUser?.token,
+  });
+
+  // const {
+  //   data: colorStatus,
+  //   refetch: refetchColorStatus,
+  //   isLoading: loadingColorStatus,
+  //   error: colorStatusError,
+  // } = useGetColorStatusQuery({
+  //   userId: accountsGoalUser?._id,
+  //   uniqueId: item?.uniqueId,
+  // });
+
+  let newExcelData = [];
+  excelData &&
+    excelData.forEach((user) => {
+      user.data.forEach((data) => newExcelData.push(data));
+    });
 
   // filter users
   const filteredClientData =
-    attachClientInput &&
-    allUsers &&
-    allUsers.filter((user) => user.email.includes(attachClientInput));
-
-  // console.log(" goal item ===> ", item);
-  // console.log(" attached client at goal card ===> ", attachClientInput);
-
-  const renderLeftActions = (progress, dragX) => {
-    // const trans = dragX.interpolate({
-    //   inputRange: [0, 50, 100, 101],
-    //   outputRange: [-20, 0, 0, 1],
-    // });
-    return (
-      <View className="flex flex-row items-center pl-4">
-        <DeleteComponent onPressDelete={handleDeleteItem} />
-      </View>
+    newExcelData &&
+    newExcelData.filter((user) =>
+      user?.ACCOUNT_NAME?.toLowerCase().includes(
+        attachClientInput.toLowerCase()
+      )
     );
-  };
 
   const handleToggleModal = () => {
     setToggleModal(!toggleModal);
@@ -114,10 +139,27 @@ const GoalsCard = ({ item, index, refetch }) => {
     settoggleAttachClients(!toggleAttachClients);
   };
 
-  const handleSelectClients = (value) => {
-    setAttachedClients(value);
-    setAttaChClientInput("");
+  const handleSelectClients = (item) => {
+    setAttachedClient(item.ACCOUNT_NAME);
+    setAttachedClientUniqueId(item.uniqueId);
+    // setAttaChClientInput("");
     handleToggleAttachClient();
+  };
+
+  const getColorStatus = () => {
+    fetch(
+      `${BASE_URL}goal/color-status/${accountsGoalUser?._id}?excelUniqueId=${item?.excelRow.uniqueId}`,
+      {
+        method: "GET",
+        // Authorization: `Bearer ${accountsGoalUser?.token}`,
+      }
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        refetchExcelData();
+      })
+
+      .catch((err) => {});
   };
 
   const handleDateTimePicker = (event, selectedDate) => {
@@ -142,20 +184,6 @@ const GoalsCard = ({ item, index, refetch }) => {
     });
   };
 
-  // const handleSetSubgoals = () => {
-  //   if (!toggleNewSUbgoals) {
-  //     setSubgoals((prevGoals) => [...prevGoals, subgoalInput]);
-  //     console.log("subgoals ===> ", subgoals);
-  //     setSubgoalInput("");
-  //   } else {
-  //     setSubgoals((prevGoals) => [...prevGoals, subgoalInput]);
-  //     console.log("subgoals ===> ", subgoals);
-  //     setSelectedSubgoals((prevGoals) => [...prevGoals, subgoalInput]);
-  //     console.log("subgoals ===> ", selectedSubgoals);
-  //     setSubgoalInput("");
-  //   }
-  // };
-
   const handleSetSubgoals = () => {
     if (subgoalInput.trim() !== "") {
       if (!toggleNewSUbgoals) {
@@ -167,7 +195,7 @@ const GoalsCard = ({ item, index, refetch }) => {
           ...prevGoals,
           { title: subgoalInput, status: false },
         ]);
-        console.log("subgoals ===> ", subgoals);
+
         setSubgoalInput("");
         setToggleNewSubgoals(false);
       } else {
@@ -175,12 +203,12 @@ const GoalsCard = ({ item, index, refetch }) => {
           ...prevGoals,
           { title: subgoalInput, status: true },
         ]);
-        console.log("subgoals ===> ", subgoals);
+
         setSelectedSubgoals((prevGoals) => [
           ...prevGoals,
           { title: subgoalInput, status: true },
         ]);
-        console.log("subgoals ===> ", selectedSubgoals);
+
         setSubgoalInput("");
         setToggleNewSubgoals(false);
       }
@@ -226,49 +254,54 @@ const GoalsCard = ({ item, index, refetch }) => {
     });
   };
 
-  // const handleSelectSubgoals = (goal) => {
-  //   setSelectedSubgoals((prevGoals) => {
-  //     if (prevGoals.includes(goal)) {
-  //       return prevGoals.filter((item) => item !== goal);
-  //     } else {
-  //       return [...prevGoals, goal];
-  //     }
-  //   });
-  // };
-
-  const handleDeleteItem = async () => {
-    const response = await deleteGoal({ id: item._id });
-    console.log("delete response ==> ", response);
-    if (response.data) {
-      refetch();
+  const closeSwipeable = () => {
+    if (goalSwipeRef.current) {
+      goalSwipeRef.current.close();
     }
   };
 
-  useEffect(() => {
-    if (showAlertModal === true) {
-      setTimeout(() => {
-        setShowAlertModal(false);
-      }, 3000);
-    }
-  });
+  const handleDeleteItem = () => {
+    Alert.alert("", `Delete ${item.goalName}`, [
+      {
+        text: "Cancel",
+        onPress: () => closeSwipeable(),
+        style: "cancel",
+      },
+      {
+        text: "OK",
+        onPress: async () => {
+          const response = await deleteGoal({
+            uniqueId: item.excelRow.uniqueId,
+            id: item._id,
+          });
+
+          if (response.data) {
+            if (goalSwipeRef?.current) {
+              setTimeout(closeSwipeable, 1500);
+            }
+          }
+        },
+      },
+    ]);
+  };
 
   const handleEditGoal = async () => {
     const body = {
       id: item._id,
+      uniqueId: attachedClientUniqueId,
       goalName: goalName,
       client: attachedClients,
       endDate: date.toString(),
       subGoals: selectedSubgoals,
     };
-    console.log("edit goal body ==>", body);
+
     try {
       const response = await editGoal(body);
 
-      console.log("goal ===> ", response);
       if (response.data) {
-        refetch();
+        // refetch();
         setShowAlertModal(true);
-        handleToggleModal();
+        getColorStatus();
       }
 
       if (response.error) {
@@ -279,19 +312,41 @@ const GoalsCard = ({ item, index, refetch }) => {
     }
   };
 
+  const renderLeftActions = () => {
+    return (
+      <View
+        className={`flex flex-row items-center pl-4 ${lastIndex === index ? "mb-20" : "mb-4"}`}
+      >
+        <DeleteComponent onPressDelete={handleDeleteItem} />
+      </View>
+    );
+  };
+
+  // show alert modal
+  useEffect(() => {
+    if (showAlertModal === true) {
+      setTimeout(() => {
+        setShowAlertModal(false);
+        handleToggleModal();
+      }, 2000);
+    }
+  });
+
   return (
     <>
       {/* goal card */}
       <Swipeable
+        ref={goalSwipeRef}
         className="flex flex-row items-center justify-between"
         renderRightActions={renderLeftActions}
       >
         <Pressable
           key={index}
-          className={`w-full relative bg-white  py-3 px-4 mb-4 border border-[#A8A8A8] rounded-3xl`}
+          className={`w-full relative bg-white  py-3 px-4 ${lastIndex === index ? "mb-20" : "mb-4"} border border-[#A8A8A8] rounded-3xl`}
           onPress={handleToggleModal}
+          style={{}}
         >
-          <CustomTextRegular className="text-base font-bold text-left">
+          <CustomTextRegular className=" text-base font-bold text-left">
             {item?.goalName || "Goal name"}
           </CustomTextRegular>
 
@@ -359,10 +414,10 @@ const GoalsCard = ({ item, index, refetch }) => {
           >
             {/* close button */}
             <TouchableOpacity
-              className=" w-6 h-6 flex self-end mt-7 items-center justify-center rounded-full  border border-[#A8A8A8] p-2"
+              className=" w-8 h-8 flex self-end mt-7 items-center justify-center rounded-full  border border-[#A8A8A8] p-2"
               onPress={handleToggleModal}
             >
-              <CloseButton color={"#A8A8A8"} />
+              <CloseButtonBigIcon color={"#A8A8A8"} />
             </TouchableOpacity>
             <CustomTextRegular className=" text-base font-bold text-left ">
               {item?.goalName || "Goal name"}
@@ -392,7 +447,7 @@ const GoalsCard = ({ item, index, refetch }) => {
                 color={
                   progressValue <= 0.3
                     ? "#F35555"
-                    : progressValue > 0.3 && progressValue <= 0.6
+                    : progressValue > 0.3 && progressValue < 0.7
                       ? "#ffa600e6"
                       : "#226e22eb"
                 }
@@ -402,7 +457,7 @@ const GoalsCard = ({ item, index, refetch }) => {
                   className={`${
                     progressValue <= 0.3
                       ? "text-[#F35555]"
-                      : progressValue > 0.3 && progressValue <= 0.6
+                      : progressValue > 0.3 && progressValue < 0.7
                         ? "text-[#ffa600e6]"
                         : "text-[#226e22eb]"
                   } text-xs font-semibold`}
@@ -413,7 +468,7 @@ const GoalsCard = ({ item, index, refetch }) => {
                   className={`${
                     progressValue <= 0.3
                       ? "text-[#F35555]"
-                      : progressValue > 0.3 && progressValue <= 0.6
+                      : progressValue > 0.3 && progressValue < 0.7
                         ? "text-[#ffa600e6]"
                         : "text-[#226e22eb]"
                   } text-xs font-semibold`}
@@ -450,105 +505,89 @@ const GoalsCard = ({ item, index, refetch }) => {
               <EditTodoIcon color={"#fff"} />
             </TouchableOpacity>
           </ScrollView>
-        </Modal>
-      )}
 
-      {/************** edit goal modal *************/}
-      {editGoalModal && (
-        <Modal transparent={true} visible={toggleModal} animationType="slide">
-          <View className="h-full w-full bg-transparent">
-            <Pressable
-              className="h-[25%] bg-black/50"
-              onPress={handleToggleEditModal}
-            />
-          </View>
-          <View className="absolute bottom-0 flex-1 w-full h-[85%] rounded-t-3xl  bg-screen-bg ">
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
-              className="flex-1 h-full w-full "
+          {/************** edit goal modal *************/}
+          {editGoalModal && (
+            <Modal
+              transparent={true}
+              visible={toggleModal}
+              animationType="slide"
             >
-              <ScrollView
-                contentContainerStyle={{ flexGrow: 1 }}
-                className=" flex-1 px-5"
-              >
-                {/* close button */}
-                <TouchableOpacity
-                  className="absolute right-0 top-5 w-6 h-6 flex items-center justify-center rounded-full  border border-[#A8A8A8] "
-                  onPress={handleToggleEditModal}
-                >
-                  <CloseButton color={"#A8A8A8"} />
-                </TouchableOpacity>
-                {/* goal name */}
-                <LabelComponent label={"Goal Name"} required={true} />
-                <View className="max-h-12 border border-form-text-color flex flex-row items-center justify-between rounded-3xl mt-4 py-3 px-6 ">
-                  <CustomTextInputField
-                    placeholder="Goal name"
-                    placeholderTextColor={"#B9B9B9"}
-                    cursorColor={"#B9B9B9"}
-                    onChangeText={(e) => setGoalName(e)}
-                    value={goalName}
-                    className="w-[70%]"
-                  />
-                  {goalName && (
-                    <TouchableOpacity
-                      className="w-6 h-6 flex items-center justify-center rounded-full  border border-[#000] "
-                      onPress={() => setGoalName("")}
-                    >
-                      <CloseButton color={"#000"} />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* attachedClients */}
-                <LabelComponent
-                  label={"Attach client to goals"}
-                  required={true}
-                />
+              <View className="h-full w-full bg-transparent">
                 <Pressable
-                  className={customButtonWithIcon + " justify-between"}
-                  onPress={handleToggleAttachClient}
+                  className="h-[25%] bg-black/50"
+                  onPress={handleToggleEditModal}
+                />
+              </View>
+              <View className="absolute bottom-0 flex-1 w-full h-[85%] rounded-t-3xl  bg-screen-bg ">
+                <KeyboardAvoidingView
+                  behavior={Platform.OS === "ios" ? "padding" : "height"}
+                  keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
+                  className="flex-1 h-full w-full "
                 >
-                  <CustomTextRegular className="text-sm text-black">
-                    <ProfileIcon /> {"   "} {attachedClients}
-                  </CustomTextRegular>
-                  <IconCaretDropdown />
-                </Pressable>
-                {/* attachedClients drop down */}
-                {/* attachedClients drop down */}
-                {toggleAttachClients && (
-                  <View className="w-full bg-white rounded-lg my-2 p-3 ">
-                    {/* filter clients */}
-                    <CustomTextInputField
-                      placeholder="filter user"
-                      placeholderTextColor={"#B9B9B9"}
-                      cursorColor={"#B9B9B9"}
-                      value={attachClientInput}
-                      className="h-12 border-b border-b-border-color px-2 text-primary-accent-color "
-                      onChangeText={(e) => setAttaChClientInput(e)}
+                  <ScrollView
+                    contentContainerStyle={{ flexGrow: 1 }}
+                    className=" flex-1 px-5"
+                  >
+                    {/* close button */}
+                    <TouchableOpacity
+                      className="absolute right-0 top-5 w-8 h-8 flex items-center justify-center rounded-full  border border-[#A8A8A8] "
+                      onPress={handleToggleEditModal}
+                    >
+                      <CloseButtonBigIcon color={"#A8A8A8"} />
+                    </TouchableOpacity>
+                    {/* goal name */}
+                    <LabelComponent label={"Goal Name"} required={true} />
+                    <View className="max-h-12 border border-form-text-color flex flex-row items-center justify-between rounded-3xl mt-4 py-3 px-6 ">
+                      <CustomTextInputField
+                        placeholder="Goal name"
+                        placeholderTextColor={"#B9B9B9"}
+                        cursorColor={"#B9B9B9"}
+                        onChangeText={(e) => setGoalName(e)}
+                        value={goalName}
+                        className="w-[70%]"
+                      />
+                      {goalName && (
+                        <TouchableOpacity
+                          className="w-6 h-6 flex items-center justify-center rounded-full  border border-[#000] "
+                          onPress={() => setGoalName("")}
+                        >
+                          <CloseButton color={"#000"} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {/* attachedClients */}
+                    <LabelComponent
+                      label={"Attach client to goals"}
+                      required={true}
                     />
-                    {filteredClientData &&
+                    <Pressable
+                      className={customButtonWithIcon + " justify-between"}
+                      onPress={handleToggleAttachClient}
+                    >
+                      <CustomTextRegular className="text-sm text-black">
+                        <ProfileIcon /> {"   "} {attachedClients}
+                      </CustomTextRegular>
+                      <IconCaretDropdown />
+                    </Pressable>
+                    {/* attachedClients drop down */}
+                    {/* attachedClients drop down */}
+                    {toggleAttachClients && (
+                      <View className="w-full bg-white rounded-lg my-2 p-3 ">
+                        {/* filter clients */}
+                        <CustomTextInputField
+                          placeholder="filter user"
+                          placeholderTextColor={"#B9B9B9"}
+                          cursorColor={"#B9B9B9"}
+                          value={attachClientInput}
+                          className="h-12 border-b border-b-border-color px-2 text-primary-accent-color "
+                          onChangeText={(e) => setAttaChClientInput(e)}
+                        />
+                        {/* {filteredClientData &&
                       filteredClientData.map((item, index) => (
                         <View key={index}>
-                          {/* <Pressable
-                          onPress={() => handleSelectClients(item.email)}
-                          className={`${
-                            index === filteredClientData.length - 1
-                              ? "border-none"
-                              : "border-b-[0.7px] border-b-form-text-color"
-                          }`}
-                          key={index}
-                        >
-                          <CustomTextRegular
-                            className={` py-3 ${
-                              attachedClients.includes(item.email)
-                                ? "text-black"
-                                : "text-form-text-color"
-                            }`}
-                          >
-                            {item.email}
-                          </CustomTextRegular>
-                        </Pressable> */}
+                        
                           <Pressable
                             onPress={() => handleSelectClients(item.email)}
                             className={`${
@@ -569,112 +608,158 @@ const GoalsCard = ({ item, index, refetch }) => {
                             </CustomTextRegular>
                           </Pressable>
                         </View>
-                      ))}
-                  </View>
-                )}
+                      ))} */}
 
-                {/* end date */}
-                <LabelComponent label={"End Date"} required={true} />
-                <Pressable
-                  className={customButtonWithIcon}
-                  onPress={handelToggleDateTimePickerMode}
-                >
-                  <CalendarIcon color={"#000"} />
-                  <CustomTextRegular className="ml-3 text-sm text-black">
-                    {date.toDateString()}
-                  </CustomTextRegular>
-                </Pressable>
-
-                {/* edit sub goals */}
-                <LabelComponent label={"Sub Goals"} required={true} />
-
-                <View className="w-full flex flex-row items-center mt-2">
-                  {/* check box */}
-                  <TouchableOpacity
-                    className="h-4 w-4 border border-black flex flex-row justify-center items-center"
-                    onPress={handleToggleNewSubgoals}
-                  >
-                    {toggleNewSUbgoals && <TickIcon />}
-                  </TouchableOpacity>
-                  <CustomTextInputField
-                    placeholder={"list item"}
-                    placeholderTextColor={"#B9B9B9"}
-                    cursorColor={"#B9B9B9"}
-                    value={subgoalInput}
-                    className={`flex-1 text-sm ml-4 h-12 ${
-                      toggleNewSUbgoals && "border-b border-b-border-color"
-                    }`}
-                    onChangeText={(e) => setSubgoalInput(e)}
-                    onSubmitEditing={handleSetSubgoals}
-                  />
-                </View>
-
-                {/* list sub goals */}
-                {selectedSubgoals.map((item, index) => (
-                  <View
-                    className="w-full flex flex-row items-center mt-4 "
-                    key={index}
-                  >
-                    {/* check box */}
-                    <TouchableOpacity
-                      className="h-4 w-4 border border-black flex flex-row justify-center items-center"
-                      onPress={() => handleSelectSubgoals(index)}
-                    >
-                      {item.status === true ? <TickIcon /> : ""}
-                      {/* {selectedSubgoals.includes(item) && <TickIcon />} */}
-                    </TouchableOpacity>
-                    <CustomTextRegular className="ml-4">
-                      {item.title}
-                    </CustomTextRegular>
-                    <TouchableOpacity
-                      className="absolute right-0 w-4 h-4 flex items-center justify-center rounded-full  border border-[#000] "
-                      onPress={() => handleRemoveSubgoals(item)}
-                    >
-                      <CloseButton color={"#000"} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-
-                {/* save goals button */}
-
-                <TouchableOpacity
-                  className={`${
-                    !isValidForm ? "bg-primary-color" : "bg-[#6787e7]"
-                  } rounded-full mt-10 h-12 py-3 flx justify-center items-center mb-10`}
-                  disabled={isValidForm ? true : false}
-                  onPress={handleEditGoal}
-                >
-                  <CustomTextRegular className="text-center font-semibold text-white text-base">
-                    {loadingEditGoal ? (
-                      <ActivityIndicator size="small" color={"#fff"} />
-                    ) : (
-                      "Save Goal"
+                        <View>
+                          {filteredClientData &&
+                            filteredClientData.map((item, i) => (
+                              <Pressable
+                                key={i}
+                                onPress={() => handleSelectClients(item)}
+                                //   className={`${
+                                //     i === user?.data?.length - 1
+                                //       ? "border-none"
+                                //       : "border-b-[0.7px] border-b-form-text-color"
+                                //   }`}
+                              >
+                                <CustomTextRegular
+                                  className={` py-3 ${
+                                    attachedClient === item?.ACCOUNT_NAME
+                                      ? "text-black"
+                                      : "text-form-text-color"
+                                  }`}
+                                >
+                                  {item?.ACCOUNT_NAME}
+                                </CustomTextRegular>
+                              </Pressable>
+                            ))}
+                        </View>
+                      </View>
                     )}
-                  </CustomTextRegular>
-                </TouchableOpacity>
-              </ScrollView>
-            </KeyboardAvoidingView>
-          </View>
-        </Modal>
-      )}
-      {/* alert */}
-      {showAlertModal && (
-        <DropDownAlert
-          showAlertModal={showAlertModal}
-          message={"Goal updated"}
-          type={"success"}
-        />
-      )}
 
-      {/* date time picker */}
-      {showDateTimePicker && (
-        <DateTimePicker
-          testID="dateTimePicker"
-          value={date}
-          mode={"date"}
-          is24Hour={false}
-          onChange={handleDateTimePicker}
-        />
+                    {/* end date */}
+                    <LabelComponent label={"End Date"} required={true} />
+                    <Pressable
+                      className={customButtonWithIcon}
+                      onPress={handelToggleDateTimePickerMode}
+                    >
+                      <CalendarIcon color={"#000"} />
+                      <CustomTextRegular className="ml-3 text-sm text-black">
+                        {date.toDateString()}
+                      </CustomTextRegular>
+                    </Pressable>
+
+                    {/* edit sub goals */}
+                    <LabelComponent label={"Sub Goals"} required={true} />
+
+                    <View className="w-full flex flex-row items-center mt-2">
+                      {/* check box */}
+                      <TouchableOpacity
+                        className="h-4 w-4 border border-black flex flex-row justify-center items-center"
+                        onPress={handleToggleNewSubgoals}
+                      >
+                        {toggleNewSUbgoals && <TickIcon />}
+                      </TouchableOpacity>
+                      <CustomTextInputField
+                        placeholder={"list item"}
+                        placeholderTextColor={"#B9B9B9"}
+                        cursorColor={"#B9B9B9"}
+                        value={subgoalInput}
+                        className={`flex-1 text-sm ml-4 h-12 ${
+                          toggleNewSUbgoals && "border-b border-b-border-color"
+                        }`}
+                        onChangeText={(e) => setSubgoalInput(e)}
+                        onSubmitEditing={handleSetSubgoals}
+                      />
+                    </View>
+
+                    {/* list sub goals */}
+                    {selectedSubgoals.map((item, index) => (
+                      <View
+                        className="w-full flex flex-row items-center mt-4 "
+                        key={index}
+                      >
+                        {/* check box */}
+                        <TouchableOpacity
+                          className="h-4 w-4 border border-black flex flex-row justify-center items-center"
+                          onPress={() => handleSelectSubgoals(index)}
+                        >
+                          {item.status === true ? <TickIcon /> : ""}
+                          {/* {selectedSubgoals.includes(item) && <TickIcon />} */}
+                        </TouchableOpacity>
+                        <CustomTextRegular className="ml-4">
+                          {item.title}
+                        </CustomTextRegular>
+                        <TouchableOpacity
+                          className="absolute right-0 w-4 h-4 flex items-center justify-center rounded-full  border border-[#000] "
+                          onPress={() => handleRemoveSubgoals(item)}
+                        >
+                          <CloseButton color={"#000"} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+
+                    {/* save goals button */}
+
+                    <TouchableOpacity
+                      className={`${
+                        !isValidForm ? "bg-primary-color" : "bg-[#6787e7]"
+                      } rounded-full mt-10 h-12 py-3 flx justify-center items-center mb-10`}
+                      disabled={isValidForm ? true : false}
+                      onPress={handleEditGoal}
+                    >
+                      <CustomTextRegular className="text-center font-semibold text-white text-base">
+                        {loadingEditGoal ? (
+                          <ActivityIndicator size="small" color={"#fff"} />
+                        ) : (
+                          "Save Goal"
+                        )}
+                      </CustomTextRegular>
+                    </TouchableOpacity>
+                  </ScrollView>
+                </KeyboardAvoidingView>
+              </View>
+
+              {/* date time picker */}
+              {showDateTimePicker && (
+                <Modal
+                  transparent={true}
+                  visible={showDateTimePicker}
+                  animationType="slide"
+                >
+                  <Pressable
+                    className="h-full w-full flex flex-col justify-center items-center bg-black/20 "
+                    onPress={() => setShowDateTimePicker(false)}
+                  >
+                    <DateTimePicker
+                      testID="dateTimePicker"
+                      value={date}
+                      mode={"date"}
+                      is24Hour={false}
+                      onChange={handleDateTimePicker}
+                      display={Platform.OS === "ios" ? "inline" : "default"}
+                      style={{
+                        backgroundColor: "#fff",
+                        width: "100%",
+                        height: "70%",
+                      }}
+                      minimumDate={new Date()}
+                    />
+                  </Pressable>
+                </Modal>
+              )}
+
+              {/* alert */}
+              {showAlertModal && (
+                <DropDownAlert
+                  showAlertModal={showAlertModal}
+                  message={"Goal updated"}
+                  type={"success"}
+                />
+              )}
+            </Modal>
+          )}
+        </Modal>
       )}
     </>
   );

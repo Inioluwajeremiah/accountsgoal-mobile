@@ -7,16 +7,22 @@
       "developmentClient": true,
       "distribution": "internal"
     },
-
     "preview": {
-      "android": {
-        "buildType": "apk"
-      },
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "android": {
+        "credentialsSource": "local"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "acountsgo076@gmail.com",
+        "ascAppId": "6504585606",
+        "appleTeamId": "298P2A68U8"
+      }
+    }
   }
 }

@@ -1,7 +1,6 @@
 import "react-native-gesture-handler";
-import { View, Text, StatusBar, Alert } from "react-native";
-import React, { useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { View, Text, Alert, SafeAreaView } from "react-native";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import SplashScreen from "./SplashScreen";
 import OnboardingScreen1 from "./onboardingScreens/OnboardingScreen1";
@@ -28,104 +27,90 @@ import * as Linking from "expo-linking";
 import SearchTodos from "./dashboardScreens/SearchTodos";
 import SearchGoals from "./dashboardScreens/SearchGoals";
 import SupportChatScreen from "./dashboardScreens/SupportChatScreen";
-import { io } from "socket.io-client";
-import { setActiveUsers, setSocket } from "../slices/socketSlice";
-import { BASE_URL } from "../utils/Endpoints";
-import * as Location from "expo-location";
 
-const prefix = Linking.createURL("/accountsgoal-deeplink");
+import OnboardingScreen from "./onboardingScreens/OnboardingScreen";
+import NoteScreen from "./dashboardScreens/NoteScreen";
+import { StatusBar } from "expo-status-bar";
+import NotificationScreen from "./dashboardScreens/NotificationScreen";
+import AcceptInviteScreen from "./organization/AcceptInviteScreen";
+import { useEffect } from "react";
+import { windowHeight } from "../utils/Dimensions";
+import {
+  setAcgUserData,
+  setOrganizationId,
+  setUserId,
+} from "../slices/userSlice";
+import { useGetUserUnderOrganizationsQuery } from "../slices/organizationApiSlice";
+import PasswordVerificationSuccessAlertScreen from "./AlertScreen/PasswordVerificationSuccessAlertScreen";
+
+const prefix = Linking.createURL("/");
 const Stack = createNativeStackNavigator();
 
 const MainScreen = () => {
   const dispatch = useDispatch();
+  const { accountsGoalUser, accountsGoalOrganisation, onboarding } =
+    useSelector((state) => state.acgUser);
+
+  // const linking = {
+  //   prefixes: [prefix, "https://www.accountsgoal.com", "accountgoal://"],
+  //   config: {
+  //     screens: {
+  //       AcceptInvite: "invite-signup/:organizationId/:userId",
+  //     },
+  //   },
+  // };
   const linking = {
-    prefixes: [prefix, "https://app.accountsgoal.com"],
+    prefixes: [prefix, "https://www.accountsgoal.com", "accountgoal://"],
+    config: {
+      screens: {
+        AcceptInvite: "invite-signup",
+      },
+    },
+    getStateFromPath: (path, config) => {
+      const params = new URLSearchParams(path.split("?")[1]);
+      const organizationId = params.get("organizationId");
+      const userId = params.get("userId");
+
+      if (organizationId && userId && accountsGoalUser?._id) {
+        dispatch(
+          setAcgUserData({
+            _id: userId,
+            organizationId: organizationId,
+            invitedUserId: accountsGoalUser?._id,
+            access: accountsGoalUser?.access,
+            email: accountsGoalUser?.email,
+            fullName: accountsGoalUser?.fullName,
+            mobile: accountsGoalUser?.mobile,
+            profileImage: accountsGoalUser?.profileImage,
+            token: accountsGoalUser?.token,
+            login: true,
+          })
+        );
+        dispatch(setUserId(userId));
+        dispatch(setOrganizationId(organizationId));
+      }
+      return {
+        routes: [
+          {
+            name: "AcceptInvite",
+            params: {
+              organizationId,
+              userId,
+            },
+          },
+        ],
+      };
+    },
   };
-  const { accountsGoalUser, accountsGoalOrganisation } = useSelector(
-    (state) => state.acgUser
-  );
-  console.log("accountsGoalUser main screen ===> ", accountsGoalUser);
-  console.log(
-    "accountsGoalOrganisation main screen  ===> ",
-    accountsGoalOrganisation
-  );
-  useEffect(() => {
-    let location;
-    let socket;
-    (async () => {
-      // location = await Location.getCurrentPositionAsync({});
-      // console.log("location ==> ", location);
-
-      socket = io("http://192.168.253.166:7001");
-      // send socket to redux store
-      // console.log("socket mainscreen => ", socket);
-      // dispatch(setSocket(JSON.stringify(socket)));
-
-      socket.on("connect", () => {
-        console.log("user connected to server ===> ", socket.id);
-      });
-
-      // emit user id
-      socket.emit("connect-user", accountsGoalUser?._id);
-      // get connected users
-      socket.on("getUsersConnected", (users) => {
-        console.log("online users ==>>", users);
-        // send connected users to store
-        dispatch(setActiveUsers(users));
-      });
-
-      // get location
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("", "Permission to access location not granted");
-        return;
-      }
-      Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000, // Update location every 5 seconds
-          distanceInterval: 10, // Update location when the user moves by 10 meters
-        },
-        (currentLocation) => {
-          // Emit location data to the server
-          // emit organisation id so that users in the organisation can send their location
-          socket.emit("organisation", {
-            organisationId:
-              accountsGoalOrganisation && accountsGoalOrganisation?._id,
-            userId: accountsGoalUser?._id,
-            ...currentLocation,
-          });
-          // console.log("currentLocation ==> ", currentLocation);
-          // location = currentLocation;
-        }
-      );
-      // get connected organisation clients
-      socket.on("users-count", (count) => {
-        console.log("connected organisation clients ===> ", count);
-      });
-      // listen to organisation id event
-      socket.on(
-        accountsGoalOrganisation && accountsGoalOrganisation?._id,
-        (organisation) => {}
-      );
-      // add the array of object to connected orgainsation slice
-    })();
-    // Cleanup function
-    return () => {
-      if (socket) {
-        return socket.disconnect();
-      }
-    };
-  }, []);
 
   return (
-    <>
+    <SafeAreaView className="flex-1 bg-primary-color">
       {/* <StatusBar barStyle={"light-content"} style="auto" /> */}
       <StatusBar barStyle={"light-content"} backgroundColor={"#4169E1"} />
 
-      <NavigationContainer linking={linking} fallback={<Text>Loading...</Text>}>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator>
-          <Stack.Screen
+          {/* <Stack.Screen
             name="splash"
             options={{
               headerShown: false,
@@ -133,7 +118,38 @@ const MainScreen = () => {
               statusBarTranslucent: true,
             }}
             component={SplashScreen}
-          />
+          /> */}
+
+          {onboarding && accountsGoalUser?.login ? (
+            <Stack.Screen
+              name="Home"
+              options={{
+                headerShown: false,
+              }}
+              component={HomeScreen}
+            />
+          ) : onboarding && !accountsGoalUser?.login ? (
+            <Stack.Screen
+              name="login"
+              options={{
+                headerShown: false,
+                statusBarHidden: false,
+                statusBarTranslucent: true,
+              }}
+              component={LoginScreen}
+            />
+          ) : (
+            <Stack.Screen
+              name="onboard"
+              options={{
+                headerShown: false,
+                statusBarHidden: false,
+                statusBarTranslucent: true,
+              }}
+              component={OnboardingScreen}
+            />
+          )}
+
           <Stack.Screen
             name="onboard1"
             options={{
@@ -167,7 +183,7 @@ const MainScreen = () => {
             component={SignUpScreen}
           />
           <Stack.Screen
-            name="login"
+            name="login2"
             options={{
               headerShown: false,
               statusBarHidden: false,
@@ -175,6 +191,7 @@ const MainScreen = () => {
             }}
             component={LoginScreen}
           />
+
           <Stack.Screen
             name="verify"
             options={{
@@ -220,12 +237,13 @@ const MainScreen = () => {
             component={EmailVerificationSuccessAlertScreen}
           />
           <Stack.Screen
-            name="Home"
+            name="passwordAlert"
             options={{
               headerShown: false,
             }}
-            component={HomeScreen}
+            component={PasswordVerificationSuccessAlertScreen}
           />
+
           {/* organization */}
           <Stack.Screen
             name="createOrganization"
@@ -306,9 +324,30 @@ const MainScreen = () => {
             }}
             component={SupportChatScreen}
           />
+          <Stack.Screen
+            name="notes"
+            options={{
+              headerShown: false,
+            }}
+            component={NoteScreen}
+          />
+          <Stack.Screen
+            name="notification"
+            options={{
+              headerShown: false,
+            }}
+            component={NotificationScreen}
+          />
+          <Stack.Screen
+            name="AcceptInvite"
+            options={{
+              headerShown: false,
+            }}
+            component={AcceptInviteScreen}
+          />
         </Stack.Navigator>
       </NavigationContainer>
-    </>
+    </SafeAreaView>
   );
 };
 export default MainScreen;

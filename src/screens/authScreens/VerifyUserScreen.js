@@ -23,6 +23,7 @@ import {
 import { formatTime } from "../../utils/formatTIme";
 import { useDispatch } from "react-redux";
 import { setUserId } from "../../slices/userSlice";
+import BackIcon from "../../Icons/BackIcon";
 
 const VerifyUserScreen = ({ navigation, route }) => {
   const [verify, { isLoading }] = useVerifyMutation();
@@ -31,8 +32,6 @@ const VerifyUserScreen = ({ navigation, route }) => {
 
   const dispatch = useDispatch();
   const fromParam = route.params;
-
-  console.log("from signup param ===> ", fromParam);
 
   const email = "user@gloriation.com";
   const trimedEmail = email.split("@")[0];
@@ -57,7 +56,6 @@ const VerifyUserScreen = ({ navigation, route }) => {
 
   const handleVerify = async () => {
     const otp = `${p1}${p2}${p3}${p4}`;
-    console.log(otp);
     try {
       const res = await verify({
         userId: fromParam.data.data.userId,
@@ -65,20 +63,17 @@ const VerifyUserScreen = ({ navigation, route }) => {
       });
       // dispatch(setCredentials({ ...res }));
       if (res.error) {
-        console.log("signup response ===>", res);
         Alert.alert(
           "",
           res.error?.message || res.error.data?.msg || res.error?.msg
         );
         return;
       }
-      console.log("verify user ==>", res);
       Alert.alert("", res.data?.message);
       setTimeout(() => {
         navigation.navigate("email");
       }, 1000);
     } catch (error) {
-      console.log(error);
       Alert.alert("", error?.data?.error || error.error || error?.data?.msg);
     }
   };
@@ -118,19 +113,16 @@ const VerifyUserScreen = ({ navigation, route }) => {
     setCountDown(0);
     try {
       const res = await resendOtp(fromParam.data.data);
-      console.log("resend otp response ===>> ", res);
       if (res?.data) {
         Alert.alert("", res.data.message);
         dispatch(setUserId(res.data.userId));
         setCountDown(60);
       }
       if (res?.error) {
-        console.log("otp response error ii ===>", res);
         Alert.alert("", res.error.data?.msg);
         return;
       }
     } catch (error) {
-      console.log("signup error ===>", error);
       Alert.alert("", error?.message);
     }
   };
@@ -138,10 +130,21 @@ const VerifyUserScreen = ({ navigation, route }) => {
   return (
     <KeyboardAvoidingView>
       <ScrollView className="px-4" contentContainerStyle={{ flexGrow: 1 }}>
-        <Image
-          source={accountgoal}
-          className=" h-12 w-1/2 object-contain flex self-center mt-8"
-        />
+        <View className="mt-10 flex flex-row items-center">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="absolute"
+          >
+            <BackIcon />
+          </TouchableOpacity>
+          <View className="flex-1 ">
+            <Image
+              source={accountgoal}
+              className=" h-14 w-2/3 ml-3 object-contain flex self-center"
+            />
+          </View>
+        </View>
+
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           OTP Verification
         </CustomTextRegular>

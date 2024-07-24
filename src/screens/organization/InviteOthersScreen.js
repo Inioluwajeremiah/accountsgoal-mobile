@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useState } from "react";
 import BackIcon from "../../Icons/BackIcon";
@@ -14,17 +15,19 @@ import CustomTextRegular from "../../components/CustomTextRegular";
 import LabelComponent from "../../components/LabelComponent";
 import CustomTextInputField from "../../components/CustomTextInputField";
 import {
+  useAddMemberMutation,
   useCreateOrganizationAndSkipInviteMutationMutation,
   useCreateOrganizationMutation,
+  useGetAnOrganizationQuery,
 } from "../../slices/organizationApiSlice";
 import { setAcgOrganisationData, setAcgUserData } from "../../slices/userSlice";
 import LottieLoadingScreen from "../../components/LottieLoadingScreen";
 import { useDispatch, useSelector } from "react-redux";
+import { status_bar_height } from "../../utils/Dimensions";
+import CloseButton from "../../Icons/CloseButton";
 
 const InviteOthersScreen = ({ navigation, route }) => {
-  const { accountsGoalOrganisation, accountsGoalUser } = useSelector(
-    (state) => state.acgUser
-  );
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
   const dispatch = useDispatch();
   const organizatioParams = route.params;
   const [companyName, setCompanyName] = useState("");
@@ -39,8 +42,23 @@ const InviteOthersScreen = ({ navigation, route }) => {
     { isLoading: laodingSkipInvite, error: errorSkippingInvite },
   ] = useCreateOrganizationAndSkipInviteMutationMutation();
 
-  console.log("members  ===> ", members);
-  console.log("acg user data   ===> ", accountsGoalOrganisation);
+  const {
+    data: accountsGoalOrganisation,
+    isLoading: loadingGetOrganisation,
+    isError: isGetOrganisationError,
+    error: getOrganisationError,
+  } = useGetAnOrganizationQuery({ userId: accountsGoalUser._id });
+
+  const [
+    addMember,
+    {
+      isLoading: loadingAddMember,
+      error: addMemberError,
+      isError: isAddMemberError,
+      isSuccess: isAdmemberSuccess,
+      success: addMemberSucess,
+    },
+  ] = useAddMemberMutation();
 
   const handleAddMembersButton = () => {
     addMembers((preVItem) => [...preVItem, {}]);
@@ -49,42 +67,40 @@ const InviteOthersScreen = ({ navigation, route }) => {
   const handleAddMembers = (item, index) => {
     addMembers((prevMembers) => {
       prevMembers[index] = item;
-      // prevMembers[index] = "pending";
       return [...prevMembers];
     });
   };
 
-  // const handleAddMembers = (item, index) => {
-  //   addMembers((prevMembers) => {
-  //     prevMembers[index]["title"] = item;
-  //     prevMembers[index]["status"] = "pending";
-  //     return [...prevMembers];
-  //   });
-  // };
+  const handleRemoveMember = (index) => {
+    addMembers((prevMembers) => {
+      return prevMembers.filter((prevMember, i) => i !== index);
+    });
+  };
 
   const handleSendInvite = async () => {
     try {
       const body = organizatioParams
         ? {
+            user: accountsGoalUser?._id,
             ...organizatioParams,
             members: members,
-            token: accountsGoalUser.token,
+            token: accountsGoalUser?.token,
           }
         : {
-            companyName: accountsGoalOrganisation.companyName,
-            companyType: accountsGoalOrganisation.companyType,
-            companySize: accountsGoalOrganisation.companySize,
+            user: accountsGoalUser._id,
+            companyName: accountsGoalOrganisation?.organization[0]?.companyName,
+            companyType: accountsGoalOrganisation?.organization[0]?.companyType,
+            companySize: accountsGoalOrganisation?.organization[0]?.companySize,
             members: members,
-            token: accountsGoalUser.token,
+            token: accountsGoalUser?.token,
           };
 
       const response = await createOrganization(body);
-      console.log("send organization invite response ===> ", response);
       if (response.error) {
         Alert.alert("", response.error.data.msg);
       }
       if (response.data.data) {
-        dispatch(setAcgOrganisationData(response.data.organisation));
+        // dispatch(setAcgOrganisationData(response.data.organisation));
         navigation.navigate("inviteSuccessAlert");
       }
 
@@ -101,23 +117,20 @@ const InviteOthersScreen = ({ navigation, route }) => {
   };
 
   // handle skip button
-  const handleCreateOrganization = async () => {
+  const handleSkipInvite = async () => {
     try {
       const body = {
+        user: accountsGoalUser._id,
         ...organizatioParams,
         members: [],
         token: accountsGoalUser.token,
       };
       const response = await createOrganizationAndSkipInviteMutation(body);
-      console.log(
-        "create organization response at skip invite ===> ",
-        response
-      );
       if (response.error) {
         Alert.alert("", response.error.data.msg);
       }
-      if (response?.data.organization) {
-        dispatch(setAcgOrganisationData(response.data.organization));
+      if (response?.data) {
+        // dispatch(setAcgOrganisationData(response.data.organization));
         navigation.navigate("createOrganizationSuccessAlert");
       }
     } catch (error) {
@@ -125,8 +138,29 @@ const InviteOthersScreen = ({ navigation, route }) => {
     }
   };
 
+  // send invite to new members
+  const handleAddNewMembers = async () => {
+    // const new_members = members.map((item, index) => item.email);
+    const response = await addMember({
+      userId: accountsGoalUser._id,
+      members: members,
+      organizationId: accountsGoalOrganisation?.organization[0]?._id,
+    });
+
+    if (response.data?._id) {
+      Alert.alert("", "Your invitation has been sent successfully");
+    }
+
+    if (response.error?.data) {
+      Alert.alert("", response?.error?.data?.msg);
+    }
+  };
+
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ marginTop: Platform.OS === "ios" ? 0 : status_bar_height }}
+    >
       {/* back icon */}
 
       <ScrollView
@@ -153,45 +187,35 @@ const InviteOthersScreen = ({ navigation, route }) => {
           <View className="relative">
             <LabelComponent label={"Add members"} required={false} />
             {members.map((item, index) => (
-              <CustomTextInputField
-                key={index}
-                placeholder="example@useremail.com"
-                value={item.title}
-                cursorColor={"#B9B9B9"}
-                placeholderTextColor={"#B9B9B9"}
-                className={` w-full h-12 text-black 
-                border border-border-color 
-                rounded-3xl px-6 py-3 mt-4 text-sm `}
-                onChangeText={(e) => handleAddMembers(e, index)}
-              />
+              <View className="w-full flex-row items-center justify-between border border-border-color rounded-full mt-4 px-5">
+                <CustomTextInputField
+                  key={index}
+                  placeholder="example@useremail.com"
+                  value={item.title}
+                  cursorColor={"#B9B9B9"}
+                  placeholderTextColor={"#B9B9B9"}
+                  className={`w-[80%] h-12 text-black   py-3  text-sm `}
+                  onChangeText={(e) => handleAddMembers(e, index)}
+                />
+                <TouchableOpacity
+                  className=" w-8 h-8 flex items-center justify-center p-2"
+                  onPress={() => handleRemoveMember(index)}
+                >
+                  <View className="w-6 h-6 rounded-full flex items-center justify-center border border-[#A8A8A8]">
+                    <CloseButton color={"#A8A8A8"} />
+                  </View>
+                </TouchableOpacity>
+              </View>
             ))}
-            {/* <Pressable
-                          onPress={() => handleSelectMemberss(item.email)}
-                          className={`${
-                            index === filteredClientData.length - 1
-                              ? "border-none"
-                              : "border-b-[0.7px] border-b-form-text-color"
-                          }`}
-                          key={index}
-                        >
-                          <CustomTextRegular
-                            className={` py-3 ${
-                              attachedClients.includes(item.email)
-                                ? "text-black"
-                                : "text-form-text-color"
-                            }`}
-                          >
-                            {item.email}
-                          </CustomTextRegular>
-                        </Pressable> */}
+
             {/* generate link and add members */}
-            <View className="flex flex-row justify-between mt-10">
+            <View className="flex flex-row justify-end mt-10">
               {/* generate link */}
-              <TouchableOpacity>
+              {/* <TouchableOpacity>
                 <CustomTextRegular className="text-xs text-primary-color">
                   Generate link
                 </CustomTextRegular>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               {/* add members */}
               <TouchableOpacity
                 className="flex flex-row items-center"
@@ -205,51 +229,6 @@ const InviteOthersScreen = ({ navigation, route }) => {
                 <CustomTextRegular className="text-sm font-medium text-[#FFA500] ml-2">
                   Add more members
                 </CustomTextRegular>
-                {/* {[...accountsGoalOrganisation.members, accountsGoalUser.email].map(
-            (item, index) => (
-              <View key={index} className="flex flex-row items-center mt-4">
-                <CustomTextRegular className="text-left text-sm text-secondary-accent-color mr-6">
-                  {index + 1}
-                </CustomTextRegular>
-                <TouchableOpacity className="  flex-1 flex flex-row items-center justify-start">
-                  <CustomTextRegular className="text-left text-sm text-secondary-accent-color">
-                    {item === accountsGoalUser.email ? "You" : item}
-                  </CustomTextRegular>
-                  <CustomTextRegular
-                    className={`${
-                      item.status === "admin"
-                        ? "bg-orange"
-                        : item.status === "pending"
-                          ? "bg-[#A8A8A8]"
-                          : item.status === "accepted"
-                            ? "bg-[#89CB69]"
-                            : ""
-                    } text-white rounded-2xl text-[10px] font-semibold px-2 py-1 flex text-center justify-center  ml-3`}
-                  >
-               
-                  </CustomTextRegular>
-                </TouchableOpacity>
-
-                <TouchableOpacity>
-                  <CustomTextRegular
-                    className={`text-xs ${
-                      item.status === "pending"
-                        ? "text-[#A8A8A8]"
-                        : item.status === "accepted"
-                          ? "text-[#F13535]"
-                          : ""
-                    } `}
-                  >
-                    {item.status === "accepted"
-                      ? "Leave"
-                      : item.status === "pending"
-                        ? "Remind"
-                        : ""}
-                  </CustomTextRegular>
-                </TouchableOpacity>
-              </View>
-            )
-          )} */}
               </TouchableOpacity>
             </View>
           </View>
@@ -260,10 +239,10 @@ const InviteOthersScreen = ({ navigation, route }) => {
           <TouchableOpacity
             className={` bg-primary-color
            rounded-full mt-16 h-12 py-3 flex justify-center items-center mb-10`}
-            onPress={handleSendInvite}
+            onPress={organizatioParams ? handleSendInvite : handleAddNewMembers}
           >
             <CustomTextRegular className="text-center font-semibold text-white text-base">
-              {laodingCreateOrganization ? (
+              {laodingCreateOrganization || loadingAddMember ? (
                 <ActivityIndicator size="small" color={"#fff"} />
               ) : (
                 "Send Invitation"
@@ -273,20 +252,23 @@ const InviteOthersScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           {/* skip button */}
-          <TouchableOpacity
-            // className="flex justify-center items-center"
-            onPress={handleCreateOrganization}
-          >
-            <CustomTextRegular className="text-center text-xs text-[#777777]">
-              {laodingSkipInvite ? (
-                <ActivityIndicator size="small" color={"#4169E1"} />
-              ) : (
-                "Skip >>>"
-              )}
-            </CustomTextRegular>
-          </TouchableOpacity>
+          {organizatioParams && (
+            <TouchableOpacity
+              // className="flex justify-center items-center"
+              onPress={handleSkipInvite}
+            >
+              <CustomTextRegular className="text-center text-xs text-[#777777]">
+                {laodingSkipInvite ? (
+                  <ActivityIndicator size="small" color={"#4169E1"} />
+                ) : (
+                  "Skip >>>"
+                )}
+              </CustomTextRegular>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
+
       {laodingCreateOrganization && (
         <LottieLoadingScreen loading={laodingCreateOrganization} />
       )}

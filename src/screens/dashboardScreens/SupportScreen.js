@@ -5,8 +5,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Linking,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import BackIcon from "../../Icons/BackIcon";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import ChatIcon from "../../Icons/ChatIcon";
@@ -26,6 +27,17 @@ const SupportScreen = ({ navigation }) => {
       }
     });
   };
+  useEffect(() => {
+    const handlePress = async (url) => {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        console.log(`Don't know how to open this URL: ${url}`);
+      }
+    };
+    handlePress("https://www.accountsgoal.com/#faq");
+  }, [navigation]);
   return (
     <SafeAreaView className="flex-1 bg-white">
       {/* back icon */}

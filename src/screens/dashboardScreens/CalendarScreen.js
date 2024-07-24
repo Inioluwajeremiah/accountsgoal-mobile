@@ -79,58 +79,32 @@ const CalendarScreen = ({ navigation, route }) => {
     refetch,
     isLoading: loadingEvents,
     error: eventError,
-  } = useGetUserEventsQuery({ userId: accountsGoalUser._id });
-
-  console.log("get all events data ==> ", allEvents && allEvents);
-  console.log("get all events error ==> ", eventError);
-  console.log("loading events  ==> ", loadingEvents);
+  } = useGetUserEventsQuery({ userId: accountsGoalUser?._id });
 
   const newData =
     allEvents &&
     allEvents.map((item, index) => {
       return {
-        title: new Date(item.date).toISOString().split("T")[0],
+        title: new Date(item?.date).toISOString().split("T")[0],
         data: [
           {
             id: index + 1,
             _id: item?._id,
-            createdAt: item.createdAt,
-            date: item.date,
-            endTime: item.endTime,
-            eventName: item.eventName,
-            location: item.location,
-            meetingLink: item.meetingLink,
-            note: item.note,
-            startTime: item.startTime,
-            updatedAt: item.updatedAt,
-            user: item.user,
-            mode: item.mode ? item.mode : "ai",
+            createdAt: item?.createdAt,
+            date: item?.date,
+            endTime: item?.endTime,
+            eventName: item?.eventName,
+            location: item?.location,
+            meetingLink: item?.meetingLink,
+            note: item?.note,
+            startTime: item?.startTime,
+            updatedAt: item?.updatedAt,
+            user: item?.user,
+            mode: item?.mode ? item?.mode : "ai",
           },
         ],
       };
     });
-  // {
-  //   title: dates[0],
-  //   data: [
-  //     {
-  //       id: 1,
-  //       hour: "12am",
-  //       duration: "1h",
-  //       title: "First Yoga",
-  //       mode: "manual",
-  //     },
-  //   ],
-  // },
-
-  console.log("newData ==> ", newData && newData[0]);
-
-  // const onDateChanged = useCallback((date, updateSource) => {
-  //   console.log('ExpandableCalendarScreen onDateChanged: ', date, updateSource);
-  // }, []);
-
-  // const onMonthChange = useCallback(({dateString}) => {
-  //   console.log('ExpandableCalendarScreen onMonthChange: ', dateString);
-  // }, []);
 
   const renderItem = useCallback(({ item }) => {
     return <AgendaItem item={item} refetch={refetch} />;
@@ -167,8 +141,8 @@ const CalendarScreen = ({ navigation, route }) => {
 
   const handleCreateEvent = async () => {
     const body = {
-      user: accountsGoalUser._id,
-      eventName,
+      user: accountsGoalUser?._id,
+      eventName: eventName,
       location: location,
       meetingLink: meetingLink,
       date: date.toString(),
@@ -179,8 +153,6 @@ const CalendarScreen = ({ navigation, route }) => {
     };
     try {
       const response = await createEvent(body);
-      console.log("Event body ==>", body);
-      console.log("Event ===> ", response);
       if (response.data) {
         refetch();
         setShowAlertModal(true);
@@ -227,7 +199,7 @@ const CalendarScreen = ({ navigation, route }) => {
     <SafeAreaView className={`flex-1 bg-screen-bg`}>
       {/* header */}
       {/* <MyStatusBar backgroundColor="#f6f6f6" barStyle="dark-content" />; */}
-      <View className="px-5 flex flex-row items-center justify-between  bg-white">
+      <View className="px-5 py-2 flex flex-row items-center justify-between  bg-white">
         {/* menu */}
         <View className="flex flex-row items-center">
           <TouchableOpacity
@@ -252,10 +224,10 @@ const CalendarScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       </View>
-      {newData && (
+      {newData && newData.length > 0 && (
         <CalendarProvider
           // date={ITEMS[1]?.title}
-          date={newData && newData[0]?.title}
+          date={newData.length > 0 && newData[0]?.title}
           // onDateChanged={onDateChanged}
           // onMonthChange={onMonthChange}
           showTodayButton
@@ -309,6 +281,7 @@ const CalendarScreen = ({ navigation, route }) => {
       >
         <AddIcon color={"#fff"} />
       </TouchableOpacity>
+
       {/******************** add Event modal *************************/}
       {toggleModal && (
         <Modal transparent={true} visible={toggleModal} animationType="slide">

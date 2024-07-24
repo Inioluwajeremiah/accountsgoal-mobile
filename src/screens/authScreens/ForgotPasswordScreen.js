@@ -21,6 +21,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setAcgUserData } from "../../slices/userSlice";
 import TickIcon from "../../Icons/TickIcon";
 import isValidEmail from "../../utils/validateEmail";
+import BackIcon from "../../Icons/BackIcon";
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const [forgetPassword, { isLoading, error }] = useForgetPasswordMutation();
@@ -39,38 +40,49 @@ const ForgotPasswordScreen = ({ navigation }) => {
   const handleSendCode = async () => {
     try {
       const response = await forgetPassword({ email });
-
-      console.log("email => ", email);
-
+      // console.log("response forgetPassword ==>", response);
       if (response.error) {
-        console.log("signup response ===>", response);
         Alert.alert(
           "",
           response.error?.message ||
             response.error.data?.msg ||
-            response.error?.msg
+            response.error?.msg ||
+            "Error sending code, please try again later"
         );
         return;
       }
       if (response?.data) {
-        setTimeout(() => {
-          Alert.alert("", response.data.message);
-          navigation.navigate("verifyPasswordReset");
-        }, 1000);
+        // setTimeout(() => {
+        Alert.alert("", response?.data?.message);
+        navigation.navigate("verifyPasswordReset", {
+          email: response?.data?.data?.email,
+          userId: response?.data?.data?.userId,
+        });
+        // }, 1000);
       }
-
-      console.log("login response ====>", response);
     } catch (error) {
-      console.log("login error ===> ", error);
+      Alert.alert("", error?.message);
     }
   };
   return (
     <KeyboardAvoidingView>
       <ScrollView className="px-4" contentContainerStyle={{ flexGrow: 1 }}>
-        <Image
-          source={accountgoal}
-          className=" h-12 w-1/2 object-contain flex self-center mt-8"
-        />
+        {/* header */}
+        <View className="mt-10 flex flex-row items-start">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="absolute"
+          >
+            <BackIcon />
+          </TouchableOpacity>
+          <View className="flex-1 ">
+            <Image
+              source={accountgoal}
+              className=" h-14 w-2/3 ml-3 object-contain flex self-center"
+            />
+          </View>
+        </View>
+
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           Forgot Password?
         </CustomTextRegular>

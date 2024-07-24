@@ -21,6 +21,7 @@ import accountgoal from "../../../assets/accounts.png";
 import { useDispatch } from "react-redux";
 import { setUserId } from "../../slices/userSlice";
 import { StatusBar } from "expo-status-bar";
+import PasswordFIeld from "../../components/PasswordField";
 
 const SignUpScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -119,9 +120,6 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   const handleSignup = async () => {
-    // navigation.navigate("verify");
-
-    console.log("countryCode + mobile ==> ", countryCode + mobile);
     try {
       const res = await register({
         email,
@@ -130,14 +128,12 @@ const SignUpScreen = ({ navigation }) => {
         password,
         confirmPassword,
       });
-      console.log(" response ===>> ", res);
       if (res.data) {
-        dispatch(setUserId(res.data.userId));
+        dispatch(setUserId(res.data.data.userId));
         Alert.alert("", res.data.message);
         navigation.navigate("verify", res);
       }
       if (res.error) {
-        console.log(" error ===>", res);
         Alert.alert(
           "",
           res.error?.message ||
@@ -148,7 +144,6 @@ const SignUpScreen = ({ navigation }) => {
         return;
       }
     } catch (error) {
-      console.log("signup error ===>", error);
       Alert.alert("", error?.message || error.data.msg);
     }
   };
@@ -163,7 +158,7 @@ const SignUpScreen = ({ navigation }) => {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-5">
           <Image
             source={accountgoal}
-            className=" h-12 w-1/2 object-contain flex self-center mt-8"
+            className=" h-12 w-1/2 object-contain flex self-center mt-12"
           />
 
           <CustomTextRegular className="text-bold text-3xl text-center mt-6">
@@ -200,7 +195,7 @@ const SignUpScreen = ({ navigation }) => {
             onSelectCode={(code) => setCountryCode(code)}
             onChangeText={(text) => setMobile(text)}
           />
-          <CustomTextInput
+          {/* <CustomTextInput
             // value={password}
             secureTextEntry={true}
             labelColor={"#D7D7D7"}
@@ -213,6 +208,25 @@ const SignUpScreen = ({ navigation }) => {
           <CustomTextInput
             // value={confirmPassword}
             secureTextEntry={true}
+            labelColor={"#D7D7D7"}
+            placeholder="********"
+            label={"Confirm Password"}
+            required={true}
+            isValid={isValidCPassword}
+            onChangeText={handleConfrmPassword}
+          /> */}
+
+          <PasswordFIeld
+            showVisibility={true}
+            labelColor={"#D7D7D7"}
+            placeholder="********"
+            label={"Password"}
+            required={true}
+            isValid={isValidPassword}
+            onChangeText={handlePassword}
+          />
+          <PasswordFIeld
+            showVisibility={true}
             labelColor={"#D7D7D7"}
             placeholder="********"
             label={"Confirm Password"}
@@ -233,7 +247,7 @@ const SignUpScreen = ({ navigation }) => {
           {/* already have an account */}
           <View className="flex flex-row items-center justify-center mb-32  mt-8">
             <CustomTextRegular className="text-sm text-primary-accent-color">
-              Already have an account
+              Already have an account?
             </CustomTextRegular>
             <TouchableOpacity onPress={() => navigation.navigate("login")}>
               <CustomTextRegular className="text-primary-color text-base font-semibold">

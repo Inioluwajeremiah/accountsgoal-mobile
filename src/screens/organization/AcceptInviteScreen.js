@@ -9,19 +9,34 @@ import {
   Platform,
   TouchableOpacity,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CustomTextRegular from "../../components/CustomTextRegular";
 import CustomTextInput from "../../components/CustomTextInput";
 import LongButtonUnFixed from "../../components/LongButtonUnFixed";
 import CustomPhoneInput from "../../components/CustomPhonetInput";
-import { useRegisterMutation } from "../../slices/usersApiSlice";
+import {
+  useLogoutMutation,
+  useRegisterMutation,
+} from "../../slices/usersApiSlice";
 import isValidEmail from "../../utils/validateEmail";
 import { isValidatePhoneNumber } from "../../utils/validatePhone";
 import accountgoal from "../../../assets/accounts.png";
-import { useDispatch } from "react-redux";
-import { setUserId } from "../../slices/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  clearAcgUserData,
+  setAcgUserData,
+  setAcgUserOnboarding,
+  setOrganizationId,
+  setUserId,
+} from "../../slices/userSlice";
+import { useRegisterInvitedUserMutation } from "../../slices/organizationApiSlice";
+import PasswordFIeld from "../../components/PasswordField";
 
-const AcceptInviteScreen = ({ navigation }) => {
+const AcceptInviteScreen = ({ route, navigation }) => {
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
+
+  const { organizationId, userId } = route?.params;
+
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -38,6 +53,19 @@ const AcceptInviteScreen = ({ navigation }) => {
   const [isDisabledArray, setisDisabledArray] = useState([]);
 
   const [register, { isLoading }] = useRegisterMutation();
+
+  const [
+    registerInvitedUser,
+    {
+      isLoading: loadingRegisterInvitedUser,
+      error: registerInvitedUserError,
+      isError: isRegisterInvitedUserError,
+      isSuccess: isegisterInvitedUserSuccess,
+      success: registerInvitedUserSuccess,
+    },
+  ] = useRegisterInvitedUserMutation();
+
+  const [logout] = useLogoutMutation();
 
   const handleEmail = (e) => {
     if (!isValidEmail(e)) {
@@ -118,9 +146,6 @@ const AcceptInviteScreen = ({ navigation }) => {
   };
 
   const handleSignup = async () => {
-    // navigation.navigate("verify");
-
-    console.log("countryCode + mobile ==> ", countryCode + mobile);
     try {
       const res = await register({
         email,
@@ -133,7 +158,6 @@ const AcceptInviteScreen = ({ navigation }) => {
         dispatch(setUserId(res.data.data.userId));
       }
       if (res.error) {
-        console.log("signup response ===>", res);
         Alert.alert(
           "",
           res.error?.message ||
@@ -145,31 +169,93 @@ const AcceptInviteScreen = ({ navigation }) => {
       }
 
       Alert.alert("", "Sign up succesfully!");
-      console.log("sign up response ===>> ", res);
+
       navigation.navigate("verify", res);
     } catch (error) {
-      console.log("signup error ===>", error);
       Alert.alert("", error?.message || error.data.msg);
     }
   };
+
+  const handleRegisterInvitedUser = async () => {
+    const response = await registerInvitedUser({
+      userId: userId,
+      organizationId: organizationId,
+      email: email,
+      fullName: fullName,
+      mobile: countryCode + mobile,
+      password: password,
+      confirmPassword: confirmPassword,
+    });
+
+    if (response?.data?._id) {
+      Alert.alert("", "You've successfully signed up!");
+
+      dispatch(
+        setAcgUserData({
+          _id: userId,
+          organizationId: organizationId,
+          invitedUserId: response.data?._id,
+          access: response.data?.access,
+          email: response.data?.email,
+          fullName: response.data?.fullName,
+          mobile: response.data?.mobile,
+          profileImage: response.data?.profileImage,
+          token: response.data?.token,
+          login: true,
+        })
+      );
+      dispatch(setUserId(userId));
+      dispatch(setOrganizationId(organizationId));
+      navigation.navigate("Home");
+    }
+    if (response?.data?.msg) {
+      Alert.alert("", response?.data?.msg);
+    }
+    if (response?.error) {
+      Alert.alert("", response?.error?.data?.error);
+    }
+  };
+
+  // logout user
+  const handleLogout = async () => {
+    try {
+      const res = await logout();
+
+      if (res?.data) {
+        dispatch(clearAcgUserData());
+      }
+    } catch (error) {
+      console.log(error);
+
+      Alert.alert("", error.message);
+    }
+  };
+
+  useEffect(() => {
+    dispatch(setAcgUserOnboarding({ onboarding: true }));
+    if (accountsGoalUser?.login === true) {
+      navigation.navigate("login2", { organizationId, userId });
+    }
+  }, []);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="absolute top-0 left-0 w-full h-full flex-1"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
+      // keyboardVerticalOffset={Platform.OS === "ios" ? 32 : 32}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-5">
         <Image
           source={accountgoal}
           className=" h-12 w-1/2 object-contain flex self-center mt-8"
         />
-
         <CustomTextRegular className="text-bold text-3xl text-center mt-6">
           Invite link
+          {/* and id: {organizationId ? organizationId : ""}{" "}
+          {userId ? userId : ""} */}
         </CustomTextRegular>
-        <CustomTextRegular className="text-secondary-accent-color text-center text-sm my-3 leading-6">
+        {/* <CustomTextRegular className="text-secondary-accent-color text-center text-sm my-3 leading-6">
           Grandida invited you to join the workspace.
-        </CustomTextRegular>
+        </CustomTextRegular> */}
         {/* email  */}
         <CustomTextInput
           labelColor={"#D7D7D7"}
@@ -197,7 +283,16 @@ const AcceptInviteScreen = ({ navigation }) => {
           onSelectCode={(code) => setCountryCode(code)}
           onChangeText={(text) => setMobile(text)}
         />
-        <CustomTextInput
+        <PasswordFIeld
+          showVisibility={true}
+          labelColor={"#D7D7D7"}
+          placeholder="********"
+          label={"Password"}
+          required={true}
+          isValid={true}
+          onChangeText={handlePassword}
+        />
+        {/* <CustomTextInput
           // value={password}
           secureTextEntry={true}
           labelColor={"#D7D7D7"}
@@ -206,8 +301,17 @@ const AcceptInviteScreen = ({ navigation }) => {
           required={true}
           isValid={isValidPassword}
           onChangeText={handlePassword}
+        /> */}
+        <PasswordFIeld
+          showVisibility={true}
+          labelColor={"#D7D7D7"}
+          placeholder="********"
+          label={"Confirm Password"}
+          required={true}
+          isValid={true}
+          onChangeText={handleConfrmPassword}
         />
-        <CustomTextInput
+        {/* <CustomTextInput
           // value={confirmPassword}
           secureTextEntry={true}
           labelColor={"#D7D7D7"}
@@ -216,23 +320,35 @@ const AcceptInviteScreen = ({ navigation }) => {
           required={true}
           isValid={isValidCPassword}
           onChangeText={handleConfrmPassword}
-        />
+        /> */}
         <LongButtonUnFixed
-          isLoading={isLoading}
+          isLoading={loadingRegisterInvitedUser}
           text="Signup"
           textColor={"#fff"}
           bgColor={"#4169E1"}
-          isDisabled={isDisabledArray.length >= 3 ? false : true}
-          disabled={isDisabledArray.length >= 3 ? false : true}
+          isDisabled={
+            isDisabledArray.length >= 3 || !userId || !organizationId
+              ? false
+              : true
+          }
+          disabled={
+            isDisabledArray.length >= 3 || !userId || !organizationId
+              ? false
+              : true
+          }
           marginTop={60}
-          on_press={handleSignup}
+          on_press={handleRegisterInvitedUser}
         />
         {/* already have an account */}
         <View className="flex flex-row items-center justify-center mb-32  mt-8">
           <CustomTextRegular className="text-sm text-primary-accent-color">
             Already have an account
           </CustomTextRegular>
-          <TouchableOpacity onPress={() => navigation.navigate("login")}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("login2", { organizationId, userId })
+            }
+          >
             <CustomTextRegular className="text-primary-color text-base font-semibold">
               {" "}
               Login

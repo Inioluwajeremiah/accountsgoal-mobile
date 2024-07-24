@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Platform,
 } from "react-native";
 import React, { useState } from "react";
 import BackIcon from "../../Icons/BackIcon";
@@ -15,6 +16,7 @@ import { customButtonWithIcon } from "../../utils/stylesVariable";
 import IconCaretDropdown from "../../Icons/IconCaretDropdown";
 import { useCreateGoalMutation } from "../../slices/goalApiSlice";
 import { companySizeData, companyTypeData } from "../../utils/dummyData";
+import { status_bar_height } from "../../utils/Dimensions";
 
 const CreateOrganizationScreen = ({ navigation }) => {
   const [toggleCompanyType, setToggleCompanyType] = useState(false);
@@ -46,7 +48,10 @@ const CreateOrganizationScreen = ({ navigation }) => {
     navigation.navigate("inviteOthers", body);
   };
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ marginTop: Platform.OS === "ios" ? 0 : status_bar_height }}
+    >
       {/* back icon */}
 
       <ScrollView

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import BackIcon from "../../Icons/BackIcon";
@@ -19,16 +20,14 @@ import { useUpdateOrganizationMutation } from "../../slices/organizationApiSlice
 import { companyTypeData } from "../../utils/dummyData";
 import LottieLoadingScreen from "../../components/LottieLoadingScreen";
 import DropDownAlert from "../../components/DropDownAlert";
+import { status_bar_height } from "../../utils/Dimensions";
 
 const companySizeData = ["1 - 20", "20 - 50", "50 - 100", "100 -  above"];
 
-const EditOrganizationScreen = ({ navigation }) => {
+const EditOrganizationScreen = ({ navigation, route }) => {
   const [showAlertModal, setShowAlertModal] = useState(false);
-  const { accountsGoalUser, accountsGoalOrganisation } = useSelector(
-    (state) => state.acgUser
-  );
-
-  console.log("accountsGoalOrganisation ==> ", accountsGoalOrganisation);
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
+  const accountsGoalOrganisation = route.params;
   const [
     updateOrganization,
     { isSuccess, isLoading: loadingUpdate, error: updateError },
@@ -36,13 +35,13 @@ const EditOrganizationScreen = ({ navigation }) => {
 
   const [toggleCompanyType, setToggleCompanyType] = useState(false);
   const [companyName, setCompanyName] = useState(
-    accountsGoalOrganisation.companyName
+    accountsGoalOrganisation?.organization[0]?.companyName
   );
   const [companyType, setCompanyType] = useState(
-    accountsGoalOrganisation.companyType
+    accountsGoalOrganisation?.organization[0]?.companyType
   );
   const [companySize, setCompanySize] = useState(
-    accountsGoalOrganisation.companySize
+    accountsGoalOrganisation?.organization[0]?.companySize
   );
 
   const isValidForm = !companyName || !companyType;
@@ -60,18 +59,15 @@ const EditOrganizationScreen = ({ navigation }) => {
     setCompanySize(value);
   };
 
-  const handleNextButton = async () => {
+  const handleEditOrganisation = async () => {
     const body = {
+      orgId: accountsGoalOrganisation?.organization[0]?._id,
       companyName,
       companyType,
       companySize,
     };
     const response = await updateOrganization(body);
-    console.log("organization response ===> ", response);
-    // setShowAlertModal(true);
-    console.log("isSuccess ==> ", isSuccess);
-    console.log("isError ==> ", updateError);
-    if (isSuccess) {
+    if (response.data?._id) {
       setShowAlertModal(true);
     }
   };
@@ -85,7 +81,10 @@ const EditOrganizationScreen = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ marginTop: Platform.OS === "ios" ? 0 : status_bar_height }}
+    >
       {/* back icon */}
 
       <ScrollView
@@ -94,7 +93,7 @@ const EditOrganizationScreen = ({ navigation }) => {
       >
         {/* <View className="border"> */}
         <TouchableOpacity
-          className="mt-5 -ml-2"
+          className="mt-4 -ml-2"
           onPress={() => navigation.goBack()}
         >
           <BackIcon />
@@ -175,7 +174,7 @@ const EditOrganizationScreen = ({ navigation }) => {
             !isValidForm ? "bg-primary-color" : "bg-[#6787e7]"
           } rounded-full mt-16 h-12 py-3 flx justify-center items-center mb-10`}
           disabled={isValidForm ? true : false}
-          onPress={handleNextButton}
+          onPress={handleEditOrganisation}
         >
           <CustomTextRegular className="text-center font-semibold text-white text-base">
             Save Changes

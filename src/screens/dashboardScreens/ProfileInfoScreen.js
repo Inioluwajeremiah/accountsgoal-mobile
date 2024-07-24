@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Platform,
 } from "react-native";
 
 import BackIcon from "../../Icons/BackIcon";
@@ -26,8 +27,8 @@ import { useUpdateUserMutation } from "../../slices/usersApiSlice";
 import LottieLoadingScreen from "../../components/LottieLoadingScreen";
 import { setAcgUserData } from "../../slices/userSlice";
 import * as ImagePicker from "expo-image-picker";
-import { AdvancedImage } from "cloudinary-react-native";
 import { Cloudinary } from "@cloudinary/url-gen";
+import { status_bar_height } from "../../utils/Dimensions";
 
 const cld = new Cloudinary({
   cloud: {
@@ -48,15 +49,16 @@ const options = {
 const ProfileInfoScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { accountsGoalUser } = useSelector((state) => state.acgUser);
+
+  //
   const [updateUser, { isLoading: loadingUpdate, error: updateError }] =
     useUpdateUserMutation();
-  console.log("accountsGoalUser  ==> ", accountsGoalUser);
   const [email, setEmail] = useState(accountsGoalUser?.email);
   const [fullName, setFullName] = useState(accountsGoalUser?.fullName);
   const [image, setImage] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [profileImage, setProfileImage] = useState(
-    accountsGoalUser.profileImage
+    accountsGoalUser?.profileImage
   );
   const [countryCode, setCountryCode] = useState(
     accountsGoalUser?.mobile.split("").slice(0, 4).join("")
@@ -69,8 +71,6 @@ const ProfileInfoScreen = ({ navigation }) => {
   const [isFullNameValid, setIsFullNameValid] = useState(true);
   const [isDisabledArray, setisDisabledArray] = useState([]);
 
-  console.log("profileImage ==> ", profileImage);
-
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -79,8 +79,6 @@ const ProfileInfoScreen = ({ navigation }) => {
       aspect: [4, 3],
       quality: 1,
     });
-
-    console.log(result.assets[0]);
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
@@ -116,7 +114,6 @@ const ProfileInfoScreen = ({ navigation }) => {
     )
       .then((response) => response.json())
       .then((result) => {
-        console.log("cloudinary upload result ==> ", result);
         setProfileImage(result.secure_url);
         setUploadingImage(false);
       })
@@ -174,29 +171,20 @@ const ProfileInfoScreen = ({ navigation }) => {
         mobile: countryCode + mobile,
         profileImage: profileImage,
       };
-      console.log("update body ===> ", body);
       const res = await updateUser(body);
-      console.log("update response  ===>> ", res);
       if (res.data) {
         dispatch(
-          setAcgUserData({ ...res.data, token: body.token, login: true })
+          setAcgUserData({ ...res.data, token: body?.token, login: true })
         );
         // Alert.alert("", res.data.message);
         setShowAlertModal(true);
       }
       if (res.error) {
         console.log(" error ===>", res);
-        // Alert.alert(
-        //   "",
-        //   res.error?.message ||
-        //     res.error.data?.msg ||
-        //     res.error?.msg ||
-        //     res.error?.error
-        // );
+
         return;
       }
     } catch (error) {
-      console.log("signup error ===>", error);
       Alert.alert("", error?.message || error.data.msg);
     }
   };
@@ -210,12 +198,18 @@ const ProfileInfoScreen = ({ navigation }) => {
   });
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView
+      className="flex-1"
+      style={{ marginTop: Platform.OS === "ios" ? 0 : status_bar_height }}
+    >
       <ScrollView className="px-5" contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1">
           {/* header */}
-          <View className="mt-5 flex flex-row items-center">
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+          <View className="mt-4 flex flex-row items-center ">
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              className="-ml-2 py-2 pr-2"
+            >
               <BackIcon />
             </TouchableOpacity>
             <CustomTextRegular className="text-base font-bold ml-3">
@@ -231,11 +225,16 @@ const ProfileInfoScreen = ({ navigation }) => {
             >
               {accountsGoalUser.profileImage ? (
                 <Image
-                  source={{ uri: accountsGoalUser.profileImage }}
-                  className="h-12 w-12 rounded-full"
+                  source={{
+                    uri: accountsGoalUser.profileImage,
+                  }}
+                  className="h-12 w-12 rounded-full bg-border-color"
                 />
               ) : (
-                <Image source={userPng} className="h-12 w-12" />
+                <Image
+                  source={userPng || { uri: profileImage }}
+                  className="h-12 w-12"
+                />
               )}
               <View className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#FFA500] flex items-center justify-center">
                 <AddImageIcon />
@@ -254,7 +253,7 @@ const ProfileInfoScreen = ({ navigation }) => {
 
           {/* change password */}
           <TouchableOpacity
-            className="flex self-end mt-6"
+            className="flex self-end mt-6 py-2 pr-2"
             onPress={() => navigation.navigate("changeProfilePassword")}
           >
             <CustomTextRegular className=" text-primary-color text-[10px] ">

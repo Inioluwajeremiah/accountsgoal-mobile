@@ -66,7 +66,7 @@ const CustomPhoneInput = ({
       </View>
 
       {/* code and number  */}
-      <View className="flex flex-row items-center border border-border-color rounded-full mt-4">
+      <View className="h-12 flex flex-row items-center border border-border-color rounded-full mt-4">
         <TouchableOpacity
           className="w-[30%] pl-6 pr-3 py-3 border-r border-border-color flex flex-row justify-center items-center  "
           onPress={handleToggle}

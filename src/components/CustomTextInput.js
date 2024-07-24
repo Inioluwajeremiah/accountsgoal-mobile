@@ -27,7 +27,7 @@ const CustomTextInput = ({
         style={{ fontFamily: "inter" }}
         cursorColor={labelColor}
         placeholderTextColor={labelColor}
-        className={`border text-xs ${
+        className={`h-12 border text-xs ${
           isValid ? "border-border-color" : "border-red-600"
         }  rounded-full px-6 py-3 mt-4 
        

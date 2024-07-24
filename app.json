@@ -1,16 +1,11 @@
 {
   "expo": {
-    "name": "accountsgoal-app",
-    "slug": "accountsgoal-app",
+    "name": "Accounts Goal",
+    "slug": "accountsgoal",
     "scheme": "accountsgoal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "icon": "./assets/adaptive-icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -18,7 +13,18 @@
         "googleMapsApiKey": "AIzaSyBx5KGKK1oPjtvLbiumwQ8DS-a9GpSVLWI"
       },
       "supportsTablet": true,
-      "bundleIdentifier": "com.inioluwajeremiah.accountsgoalapp"
+      "bundleIdentifier": "com.accountsgoal.accountsgoalapp",
+      "buildNumber": "10",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["accountsgoal"]
+          }
+        ],
+        "LSApplicationQueriesSchemes": ["accountsgoal"],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "associatedDomains": ["applinks:accountsgoal.com"]
     },
     "android": {
       "config": {
@@ -27,10 +33,44 @@
         }
       },
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive_icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.inioluwajeremiah.accountsgoalapp"
+      "splash": {
+        "image": "./assets/splash1.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4169E1"
+      },
+      "package": "com.accountsgoal.accountsgoalapp",
+      "versionCode": 8,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "www.accountsgoal.com",
+              "pathPrefix": "/invite-signup"
+            },
+            {
+              "scheme": "accountsgoal",
+              "pathPrefix": "/invite-signup"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,11 +88,18 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
+        }
       ]
     ],
+    "owner": "accountsgoal",
     "extra": {
       "eas": {
-        "projectId": "8717ccc5-70eb-4722-b87f-559087a04ad0"
+        "projectId": "155944bf-5faa-4c9d-8d5d-e79e159d21de"
       }
     }
   }

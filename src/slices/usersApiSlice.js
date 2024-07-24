@@ -49,8 +49,8 @@ export const usersApiSlice = apiSlice.injectEndpoints({
     }),
     resetPassword: builder.mutation({
       query: (data) => ({
-        url: `${PASSWORD_RESET_URL}`,
-        method: "PATCH",
+        url: `verify-reset-password`,
+        method: "POST",
         body: data,
       }),
     }),
@@ -60,13 +60,7 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         method: "POST",
       }),
     }),
-    // profile: builder.mutation({
-    //   query: (data) => ({
-    //     url: `${USER_URL}/profile`,
-    //     method: "PUT",
-    //     body: data,
-    //   }),
-    // }),
+
     getAllUsers: builder.query({
       query: () => ({
         url: `${ALL_USERS}`,
@@ -74,18 +68,7 @@ export const usersApiSlice = apiSlice.injectEndpoints({
       providesTags: ["User"],
       keepUnusedDataFor: 5,
     }),
-    // deleteUser: builder.mutation({
-    //   query: (userId) => ({
-    //     url: `${USER_URL}/${userId}`,
-    //     method: "DELETE",
-    //   }),
-    // }),
-    // getUserDetails: builder.query({
-    //   query: (userId) => ({
-    //     url: `${USER_URL}/${userId}`,
-    //   }),
-    //   keepUnusedDataFor: 5,
-    // }),
+
     updateUser: builder.mutation({
       query: (data) => ({
         url: "updateuser/",

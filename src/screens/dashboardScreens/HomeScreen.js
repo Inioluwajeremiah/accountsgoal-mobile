@@ -1,24 +1,22 @@
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   Image,
-  Settings,
   ScrollView,
   StatusBar,
   StyleSheet,
   Platform,
-  SafeAreaView,
+  Linking,
+  Pressable,
+  Modal,
+  Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import userpng from "../../../assets/user.png";
-import MenuIcon from "../../Icons/MenuIcon";
 import {
   DrawerContentScrollView,
-  DrawerItem,
   DrawerItemList,
   createDrawerNavigator,
 } from "@react-navigation/drawer";
@@ -31,52 +29,105 @@ import GoalIcon from "../../Icons/GoalIcon";
 import TodoListIcon from "../../Icons/TodoListIcon";
 import CalendarIcon from "../../Icons/CalendarIcon";
 import MapScreen from "./MapScreen";
-import CalendarScreen from "./CalendarScreen";
 import TodoScreen from "./TodoScreen";
 import CreateOrganizationIcon from "../../Icons/CreateOrganizationIcon";
 import EditProfileIcon from "../../Icons/EditProfileIcon";
 import SupportIcon from "../../Icons/SupportIcon";
-import SettingsIcon from "../../Icons/SettingsIcon";
 import LogoutIcon from "../../Icons/LogoutIcon";
-import AddIcon from "../../Icons/AddIcon";
 import { useLogoutMutation } from "../../slices/usersApiSlice";
 import { clearAcgUserData } from "../../slices/userSlice";
 import AngleRightIcon from "../../Icons/AngleRightIcon";
 import AttachIcon from "../../Icons/AttachIcon";
 import { windowHeight } from "../../utils/Dimensions";
 import ProfileInfoScreen from "./ProfileInfoScreen";
-import SupportScreen from "./SupportScreen";
-import SettingsScreen from "./SettingsScreen";
+import { useGetAnOrganizationQuery } from "../../slices/organizationApiSlice";
+import TeamsIcon from "../../Icons/TeamsIcon";
+import GoogleMeetIcon from "../../Icons/GoogleMeetIcon";
+import AppleIcon from "../../Icons/AppleIcon";
+import CalendlyIcon from "../../Icons/CalendlyIcon";
+import {
+  APPLE_CALENDAR_URL,
+  CALENDLY_URL,
+  GOOGLE_MEET_URL,
+  OUTLOOK_URL,
+  TEAMS_URL,
+} from "../../utils/Endpoints";
+import OutlookIcon from "../../Icons/OutlookIcon";
 
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 const marginTop = windowHeight * 0.045;
 
-function CustomDrawerContent(props) {
-  const { accountsGoalUser, accountsGoalOrganisation } = useSelector(
-    (state) => state.acgUser
-  );
-  console.log(
-    "accountsGoalOrganisation home screen ==> ",
-    accountsGoalOrganisation
-  );
+function CustomDrawerContent({ route, ...props }) {
+  const { accountsGoalUser } = useSelector((state) => state.acgUser);
+  const userId = route?.params?.userId;
+  const organizationId = route?.params?.organizationId;
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const [logout] = useLogoutMutation();
-  const organization = false;
+
+  const handlePress = async (url) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
+
+  const {
+    data: accountsGoalOrganisation,
+    isLoading: loadingGetOrganisation,
+    isError: isGetOrganisationError,
+    error: getOrganisationError,
+  } = useGetAnOrganizationQuery({
+    userId: accountsGoalUser?._id,
+  });
+
+  // check if invited user is part of the organisation
+  const isAdmin = !accountsGoalUser?.invitedUserId;
+  const invitedUser =
+    accountsGoalOrganisation &&
+    accountsGoalOrganisation?.organization[0]?.invitedUsers?.some(
+      (item) => item?.email === accountsGoalUser?.email
+    );
+
+  // if user already leaves the organisation then log the user out so that he doesn't have access to admin || client data
+  useEffect(() => {
+    if (userId && organizationId) {
+      if (!isAdmin || !invitedUser) {
+        dispatch(clearAcgUserData());
+        Alert.alert(
+          "",
+          "Access denied: You do not belong to this organization.",
+          [
+            {
+              text: "",
+              onPress: () => navigation.navigate("signup"),
+              style: "cancel",
+            },
+            {
+              text: "OK",
+              onPress: async () => {
+                navigation.navigate("signup");
+              },
+            },
+          ]
+        );
+      }
+    }
+  }, [userId, organizationId, isAdmin, invitedUser]);
 
   // logout user
   const handleLogout = async () => {
     try {
       const res = await logout();
-      console.log("logout response ===> ", res);
+
       if (res.data) {
-        navigation.navigate("login");
         dispatch(clearAcgUserData());
+        navigation.navigate("login");
       }
     } catch (error) {
-      console.log(error);
-
       Alert.alert("", error.message);
     }
   };
@@ -102,7 +153,7 @@ function CustomDrawerContent(props) {
       {/* <StatusBar barStyle={"dark-content"} backgroundColor={"#f6f6f6"} /> */}
       <View
         // style={{ height: windowHeight * 0.17 }}
-        className="w-full h-[25%] flex flex-row justify-start items-center bg-primary-color px-5 "
+        className="w-full h-[27%] flex flex-row justify-start items-center bg-primary-color px-5 "
       >
         <TouchableOpacity
           onPress={handleGoToProfileScreen}
@@ -122,23 +173,32 @@ function CustomDrawerContent(props) {
           style={{ marginTop: -marginTop }}
         >
           <CustomTextRegular className="ml-5 text-white font-semibold text-sm">
-            {accountsGoalUser?.fullName
-              ? accountsGoalUser?.fullName
-              : "Jane Doe"}
+            {accountsGoalUser?.fullName && accountsGoalUser?.fullName}
           </CustomTextRegular>
         </TouchableOpacity>
       </View>
       {/* drawer items */}
       <View
         // style={{ height: windowHeight * 0.64 }}
-        className="h-[45%]  rounded-t-2xl -mt-10 flex-1  bg-white-color pt-8"
+        className="h-[42%]  rounded-t-2xl -mt-10 flex-1  bg-white-color pt-8"
       >
         {/* <View> */}
         <DrawerContentScrollView {...props} className="">
           <DrawerItemList {...props} />
           {/* custom logout drawitem */}
+          {/* support */}
           <TouchableOpacity
-            className="flex flex-row items-center  px-5 py-2"
+            className="flex flex-row items-center  px-5 py-3"
+            onPress={() => handlePress("https://www.accountsgoal.com/#faq")}
+          >
+            <SupportIcon color={"#777777"} />
+            <CustomTextRegular className=" text-[#777777] ml-4 text-sm">
+              Support
+            </CustomTextRegular>
+          </TouchableOpacity>
+          {/* logout */}
+          <TouchableOpacity
+            className="flex flex-row items-center  px-5 pt-3 pb-2"
             onPress={handleLogout}
           >
             <LogoutIcon color={"#777777"} />
@@ -157,45 +217,56 @@ function CustomDrawerContent(props) {
         <TouchableOpacity className="flex flex-row items-center px-5 py-3">
           <CalendarIcon color={"#777777"} />
           <CustomTextRegular className="text-[#777777] ml-4 text-sm">
-            Nicholas@gloration.com
+            {accountsGoalUser?.email}
           </CustomTextRegular>
         </TouchableOpacity>
-        <TouchableOpacity className="flex flex-row items-center px-5 py-3 ">
+        {/* <TouchableOpacity className="flex flex-row items-center px-5 py-3 ">
           <AddIcon color={"#000"} />
           <CustomTextRegular className="text-[#B9B9B9] ml-6 text-sm">
-            Nicholas@gloration.com
+            name@accountsgoal.com
           </CustomTextRegular>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       {/* created organisations */}
-      <View className="h-[15%] pb-4">
+      <View className="h-[17%] pb-4 overflow-y-scroll">
         {/* create organization */}
-        {accountsGoalOrganisation ? (
-          <View className="flex fl ">
+        {!loadingGetOrganisation &&
+        accountsGoalOrganisation &&
+        accountsGoalOrganisation?.organization?.length > 0 ? (
+          <View className="flex ">
             <TouchableOpacity
               className=" flex flex-row items-center justify-between px-5 "
               onPress={handleGoToOrganisationProfileScreen}
             >
-              <View className="flex flex-row items-center">
+              <View className="flex flex-row items-center flex-wrap gap-2">
                 <CustomTextRegular className="text-base font-bold">
-                  {accountsGoalOrganisation.companyName}
+                  {accountsGoalOrganisation &&
+                    accountsGoalOrganisation?.organization[0]?.companyName}
                 </CustomTextRegular>
-                <CustomTextRegular className="text-xs rounded-2xl ml-2  px-2 py-1 bg-[#FFA500] text-white">
-                  Organisation
-                </CustomTextRegular>
+
+                <View className="rounded-2xl  px-2 py-1 bg-[#FFA500]">
+                  <CustomTextRegular
+                    style={{ borderRadius: 20, borderRadius: 2 }}
+                    className="text-xs  text-white"
+                  >
+                    Organisation
+                  </CustomTextRegular>
+                </View>
               </View>
               <AngleRightIcon />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              className="flex flex-row bg-[#ECF0FC] mt-3 h-12 items-center px-5"
-              onPress={handleGoToInviteScreen}
-            >
-              <AttachIcon color={"#000"} />
-              <CustomTextRegular className="text-black text-sm ml-4">
-                Invite members
-              </CustomTextRegular>
-            </TouchableOpacity>
+            {!accountsGoalUser?.invitedUserId && (
+              <TouchableOpacity
+                className="flex flex-row bg-[#ECF0FC] mt-3 h-12  items-center px-5"
+                onPress={handleGoToInviteScreen}
+              >
+                <AttachIcon color={"#000"} />
+                <CustomTextRegular className="text-black text-sm ml-4">
+                  Invite members
+                </CustomTextRegular>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <TouchableOpacity
@@ -209,100 +280,219 @@ function CustomDrawerContent(props) {
           </TouchableOpacity>
         )}
       </View>
+      {/* {loadingGetOrganisation && (
+        <LottieLoadingScreen loading={loadingGetOrganisation} />
+      )} */}
     </ScrollView>
   );
 }
 
 const DashboardTabs = () => {
-  const [toggleMediaDialog, setToggleMediaDialog] = useState(false);
+  const [toggleCalendarModal, setToggleCalendarModal] = useState(false);
 
-  // toggle media dialog
-  const handleToggleMediaDialog = () => {
-    setToggleMediaDialog(!toggleMediaDialog);
+  // toggle media Modal
+  const handleToggleCalendarModal = () => {
+    setToggleCalendarModal(!toggleCalendarModal);
   };
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          if (route.name === "map") {
-            return (
-              <>
-                <MapIcon color={focused ? "#4169E1" : "#B9B9B9"} />
-                <CustomTextRegular
-                  className={`${
-                    focused ? "text-primary-color" : "text-[#B9B9B9]"
-                  } mt-2 text-sm`}
-                >
-                  Map
-                </CustomTextRegular>
-              </>
-            );
-          } else if (route.name === "calendar") {
-            return (
-              <>
-                <CalendarIcon color={focused ? "#4169E1" : "#B9B9B9"} />
-                <CustomTextRegular
-                  className={`${
-                    focused ? "text-primary-color" : "text-[#B9B9B9]"
-                  } mt-2 text-sm`}
-                >
-                  Calendar
-                </CustomTextRegular>
-              </>
-            );
-          } else if (route.name === "todo") {
-            return (
-              <>
-                <TodoListIcon color={focused ? "#4169E1" : "#B9B9B9"} />
-                <CustomTextRegular
-                  className={`${
-                    focused ? "text-primary-color" : "text-[#B9B9B9]"
-                  } mt-2 text-sm`}
-                >
-                  To-do list
-                </CustomTextRegular>
-              </>
-            );
-          } else if (route.name === "goals") {
-            return (
-              <>
-                <GoalIcon color={focused ? "#4169E1" : "#B9B9B9"} />
-                <CustomTextRegular
-                  className={`${
-                    focused ? "text-primary-color" : "text-[#B9B9B9]"
-                  } mt-2 text-sm`}
-                >
-                  Goals
-                </CustomTextRegular>
-              </>
-            );
-          }
-        },
+  const handlePress = async (url) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
 
-        tabBarStyle: {
-          backgroundColor: "#fff",
-          height: 104,
-        },
-        headerShown: false,
-        tabBarLabel: "",
-      })}
-    >
-      <Tab.Screen name="map" component={MapScreen} />
-      <Tab.Screen name="calendar" component={CalendarScreen} />
-      <Tab.Screen name="todo" component={TodoScreen} />
-      <Tab.Screen name="goals" component={GoalsScreen} />
-    </Tab.Navigator>
+  const CalendarModal = () => {
+    return (
+      <Modal
+        animationType="slide"
+        visible={toggleCalendarModal}
+        transparent={true}
+      >
+        <View className="h-full w-full flex-1 ">
+          <Pressable className="h-[65%]" onPress={handleToggleCalendarModal} />
+          {/* <View className="absolute bottom-24 w-full h-[40%] z-20 justify-center items-center bg-screen-bg rounded-t-3xl px-5"> */}
+          <View className=" w-full h-[40%] justify-center items-center bg-screen-bg rounded-t-3xl px-5 -mt-16">
+            <TouchableOpacity>
+              <TeamsIcon />
+              <CustomTextRegular className="text-sm">Teams</CustomTextRegular>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  return (
+    <>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            if (route.name === "map") {
+              return (
+                <>
+                  <MapIcon color={focused ? "#4169E1" : "#B9B9B9"} />
+                  <CustomTextRegular
+                    className={`${
+                      focused ? "text-primary-color" : "text-[#B9B9B9]"
+                    } mt-2 text-sm`}
+                  >
+                    Map
+                  </CustomTextRegular>
+                </>
+              );
+            } else if (route.name === "calendar") {
+              return (
+                <TouchableOpacity
+                  onPress={handleToggleCalendarModal}
+                  className="flex flex-col items-center"
+                >
+                  <CalendarIcon
+                    color={
+                      focused
+                        ? "#4169E1"
+                        : toggleCalendarModal
+                          ? "#4169E1"
+                          : "#B9B9B9"
+                    }
+                  />
+                  <CustomTextRegular
+                    className={`${
+                      focused || toggleCalendarModal
+                        ? "text-primary-color"
+                        : "text-[#B9B9B9]"
+                    } mt-2 text-sm`}
+                  >
+                    Calendar
+                  </CustomTextRegular>
+                </TouchableOpacity>
+              );
+            } else if (route.name === "todo") {
+              return (
+                <>
+                  <TodoListIcon color={focused ? "#4169E1" : "#B9B9B9"} />
+                  <CustomTextRegular
+                    className={`${
+                      focused ? "text-primary-color" : "text-[#B9B9B9]"
+                    } mt-2 text-sm`}
+                  >
+                    To-do list
+                  </CustomTextRegular>
+                </>
+              );
+            } else if (route.name === "goals") {
+              return (
+                <>
+                  <GoalIcon color={focused ? "#4169E1" : "#B9B9B9"} />
+                  <CustomTextRegular
+                    className={`${
+                      focused ? "text-primary-color" : "text-[#B9B9B9]"
+                    } mt-2 text-sm`}
+                  >
+                    Goals
+                  </CustomTextRegular>
+                </>
+              );
+            }
+          },
+
+          tabBarStyle: {
+            backgroundColor: "#fff",
+            height: 100,
+            paddingVertical: 10,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          headerShown: false,
+          tabBarLabel: "",
+        })}
+      >
+        <Tab.Screen name="map" component={MapScreen} />
+        <Tab.Screen name="calendar" component={CalendarModal} />
+        <Tab.Screen name="todo" component={TodoScreen} />
+        <Tab.Screen name="goals" component={GoalsScreen} />
+      </Tab.Navigator>
+
+      {toggleCalendarModal ? (
+        <Modal
+          animationType="slide"
+          visible={toggleCalendarModal}
+          transparent={true}
+        >
+          <View className="flex-1 justify-between">
+            <Pressable
+              className="h-[75%]"
+              onPress={handleToggleCalendarModal}
+            />
+            <View className=" w-full h-[30%]  bg-screen-bg rounded-t-3xl px-7 py-5 -mt-16 ">
+              {/* calendly */}
+              <TouchableOpacity
+                className="flex flex-row items-center mt-4"
+                onPress={() => handlePress(CALENDLY_URL)}
+              >
+                <CalendlyIcon />
+                <CustomTextRegular className="text-sm  ml-4">
+                  Calendly
+                </CustomTextRegular>
+              </TouchableOpacity>
+              {/* google meet */}
+              <TouchableOpacity
+                className="flex flex-row items-center mt-4"
+                onPress={() => handlePress(GOOGLE_MEET_URL)}
+              >
+                <GoogleMeetIcon />
+                <CustomTextRegular className="text-sm ml-4">
+                  Google meet
+                </CustomTextRegular>
+              </TouchableOpacity>
+              {/* outlook */}
+              <TouchableOpacity
+                className="flex flex-row items-center mt-4"
+                onPress={() => handlePress(OUTLOOK_URL)}
+              >
+                <OutlookIcon />
+                <CustomTextRegular className="text-sm  ml-4">
+                  Outlook
+                </CustomTextRegular>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex flex-row items-center mt-4"
+                onPress={() => handlePress(TEAMS_URL)}
+              >
+                <TeamsIcon />
+                <CustomTextRegular className="text-sm  ml-4">
+                  Teams
+                </CustomTextRegular>
+              </TouchableOpacity>
+
+              {/* <TouchableOpacity
+                className="flex flex-row items-center mt-4"
+                onPress={() => handlePress(APPLE_CALENDAR_URL)}
+              >
+                <AppleIcon />
+                <CustomTextRegular className="text-sm  ml-4">
+                  Apple
+                </CustomTextRegular>
+              </TouchableOpacity> */}
+            </View>
+          </View>
+        </Modal>
+      ) : null}
+    </>
   );
 };
 
-const HomeScreen = ({ navigation }) => {
-  // const { accountsGoalUser } = useSelector((state) => state.acgUser);
+const HomeScreen = ({ navigation, route }) => {
   return (
     <>
       <Drawer.Navigator
         style={{ flex: 1 }}
-        // initialRouteName=""
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        drawerContent={(props) => (
+          <CustomDrawerContent route={route} {...props} />
+        )}
         screenOptions={{
           drawerLabelStyle: {
             color: "#777777",
@@ -368,42 +558,6 @@ const HomeScreen = ({ navigation }) => {
             headerShown: false,
           }}
           component={ProfileInfoScreen}
-        />
-        <Drawer.Screen
-          name="support"
-          component={SupportScreen}
-          options={{
-            drawerIcon: ({ focused }) => (
-              <SupportIcon color={focused ? "black" : "#777777"} />
-            ),
-            drawerLabel: ({ focused }) => (
-              <CustomTextRegular
-                style={{ color: focused ? "black" : "#777777" }}
-                className="text-sm -ml-4"
-              >
-                Support
-              </CustomTextRegular>
-            ),
-            headerShown: false,
-          }}
-        />
-        <Drawer.Screen
-          name="settings"
-          component={SettingsScreen}
-          options={{
-            drawerIcon: ({ focused }) => (
-              <SettingsIcon color={focused ? "black" : "#777777"} />
-            ),
-            drawerLabel: ({ focused }) => (
-              <CustomTextRegular
-                style={{ color: focused ? "black" : "#777777" }}
-                className="text-sm -ml-4"
-              >
-                Settings
-              </CustomTextRegular>
-            ),
-            headerShown: false,
-          }}
         />
       </Drawer.Navigator>
     </>

@@ -7,7 +7,6 @@ const OnboardingSuccessfull = ({ navigation, route }) => {
   const { userData } = useSelector((state) => state.auth);
   const userParams = route.params;
 
-  console.log("userdata at onboarding succesfyll => ", userData);
   return (
     <SuccessAlertScreenComponent
       src={require("../../../assets/success.json")}
@@ -22,8 +21,8 @@ const OnboardingSuccessfull = ({ navigation, route }) => {
             userData?.role === "footballer"
               ? "footballerStackScreen"
               : userData?.role === "scout"
-              ? "scoutStackScreen"
-              : ""
+                ? "scoutStackScreen"
+                : ""
           }`
         )
       }
